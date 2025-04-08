@@ -24,7 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,15 +56,21 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+volatile uint8_t tim_4ms_flag = 0;
+volatile uint32_t tim_4ms_tick = 0;
+
+void other_task() {
+  //do nothing now
+}
+
+uint32_t get_4ms_tick() {
+  return tim_4ms_tick;
+}
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim->Instance == TIM6) {
     /* 4ms itmer */
-    static uint32_t counter = 0;
-    if (counter++ >= 250) {
-      //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
-      HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9);
-      counter = 0;
-    }
+    tim_4ms_tick++;
+    tim_4ms_flag = 1;
   }
 }
 /* USER CODE END 0 */
@@ -111,6 +117,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if (tim_4ms_flag) {
+      tim_4ms_flag = 0;
+      key_scan();
+    }
+    other_task();
   }
   /* USER CODE END 3 */
 }

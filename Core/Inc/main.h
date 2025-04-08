@@ -69,7 +69,7 @@ void Error_Handler(void);
 #define LED1_GPIO_Port GPIOF
 
 /* USER CODE BEGIN Private defines */
-
+uint32_t get_4ms_tick();
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
