@@ -17,14 +17,17 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <stdio.h>
 #include "main.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "fsmc.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "key.h"
+#include "lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,10 +62,22 @@ void SystemClock_Config(void);
 volatile uint8_t tim_4ms_flag = 0;
 volatile uint32_t tim_4ms_tick = 0;
 
+int _write(int fd, char *ptr, int len) {
+  HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+  return len;
+}
+
 void other_task() {
   //do nothing now
 }
-
+void tim_task() {
+  /* 4ms */
+  key_scan();
+  if (tim_4ms_tick%250 == 0) {
+    /* 1s */
+    test_lcd();
+  }
+}
 uint32_t get_4ms_tick() {
   return tim_4ms_tick;
 }
@@ -106,6 +121,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_TIM6_Init();
+  MX_FSMC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -119,7 +135,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
     if (tim_4ms_flag) {
       tim_4ms_flag = 0;
-      key_scan();
+      tim_task();
     }
     other_task();
   }

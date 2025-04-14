@@ -1,5 +1,6 @@
 #ifndef __KEY_H
 #define __KEY_H
+#include "stm32f4xx_hal.h"
 
 #define DEBOUNCE_TIME    3  /* 3*4=12ms */
 
