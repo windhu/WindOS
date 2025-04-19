@@ -216,14 +216,26 @@ void lcd_clear(uint16_t color)
     }
 }
 
-void draw_char(uint16_t startx, uint16_t starty, const uint8_t *char_bmp) {
+uint16_t lcd_get_width() {
+    return lcddev.width;
+}
+
+uint16_t lcd_get_heigth() {
+    return lcddev.height;
+}
+
+void lcd_draw_char(uint16_t startx, uint16_t starty, uint16_t bmpsize, uint16_t fcolor, uint16_t bcolor, const uint8_t *char_bmp) {
+    uint16_t w = (bmpsize + 7)/8;
     lcd_wr_regno(0x29);
-    for (uint16_t y = 0; y < 64; y++) {
-        for (uint16_t x = 0; x < 8; x++) {
-            uint8_t p = char_bmp[y*8 + x];
+    for (uint16_t y = 0; y < bmpsize; y++) {
+        for (uint16_t x = 0; x < w; x++) {
+            uint8_t p = char_bmp[y*w + x];
             for(uint16_t b = 0; b < 8; b++) {
                 if (p&0x80) {
-                    lcd_draw_point(x*8+b+startx, y+starty, RED);
+                    lcd_draw_point(x*8+b+startx, y+starty, fcolor);
+                }
+                else {
+                    lcd_draw_point(x*8+b+startx, y+starty, bcolor);
                 }
                 p <<= 1;
             }
@@ -231,7 +243,15 @@ void draw_char(uint16_t startx, uint16_t starty, const uint8_t *char_bmp) {
     }
 }
 
-void draw_rectagle(uint16_t startx, uint16_t starty, uint16_t w, uint16_t h, uint16_t color) {
+void lcd_draw_str(int16_t startx, uint16_t starty, uint16_t bmpsize, uint16_t fcolor, uint16_t bcolor, uint8_t *str) {
+    while(str != 0 && *str != '\0') {
+        lcd_draw_char(startx, starty, bmpsize, fcolor, bcolor, ascii_32x32_table[*str]);
+        startx += bmpsize;
+        str++;
+    }
+}
+
+void lcd_draw_rectagle(uint16_t startx, uint16_t starty, uint16_t w, uint16_t h, uint16_t color) {
     lcd_wr_regno(0x29);
     for (uint16_t x = startx; x < (startx + w); x++) {
         for (uint16_t y = starty; y < (starty + h); y++) {
@@ -248,30 +268,4 @@ uint16_t random_rgb565(void) {
     uint8_t b = rand() % 32;
 
     return ((r << 11) | (g << 5) | b);  //RGB565
-}
-
-#define RECT_W 20
-void test_lcd() {
-    static uint16_t x = 0;
-    static uint16_t y = 0;
-    static uint8_t showed = 0;
-
-    if (y >= lcddev.height)
-        return;
-    if (showed == 0) {
-        draw_char(100,100, char_64x64_feng);
-        draw_char(100,200, char_64x64_qing);
-        draw_char(100,300, char_64x64_yun);
-        draw_char(100,400, char_64x64_dan);
-        showed = 1;
-        return;
-    }
-    if (x >= lcddev.width) {
-        x = 0;
-        y += RECT_W;
-    }
-    //lcd_wr_regno(0x11);
-    //HAL_Delay(120);
-    draw_rectagle(x, y, RECT_W, RECT_W, random_rgb565());
-    x += RECT_W;
 }

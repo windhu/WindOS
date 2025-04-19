@@ -23,6 +23,9 @@ typedef struct {
 
 void LcdDev_init();
 void lcd_clear(uint16_t color);
-
-void test_lcd();
+uint16_t lcd_get_width();
+uint16_t lcd_get_heigth();
+void lcd_draw_char(uint16_t startx, uint16_t starty, uint16_t bmpsize, uint16_t fcolor, uint16_t bcolor, const uint8_t *char_bmp);
+void lcd_draw_str(int16_t startx, uint16_t starty, uint16_t bmpsize, uint16_t fcolor, uint16_t bcolor, uint8_t *str);
+void lcd_draw_rectagle(uint16_t startx, uint16_t starty, uint16_t w, uint16_t h, uint16_t color);
 #endif

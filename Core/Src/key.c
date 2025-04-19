@@ -2,6 +2,8 @@
 #include "stm32f4xx_hal.h"
 #include "key.h"
 #include "main.h"
+#include "fun_test.h"
+#include "stdio.h"
 
 void on_key0(KeyState state);
 void on_key1(KeyState state);
@@ -16,11 +18,15 @@ Key keys[] = {
 void on_key0(KeyState state) {
   if (state == KEY_IDLE) {
     HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+    //test iic write
+    test_iic_write_random();
   }
 }
 void on_key1(KeyState state) {
   if (state == KEY_IDLE) {
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    //Test iic
+    test_iic_read();
   }
 }
 void on_key2(KeyState state) {

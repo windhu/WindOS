@@ -69,6 +69,10 @@ void Error_Handler(void);
 #define LED1_GPIO_Port GPIOF
 #define LCD_BL_Pin GPIO_PIN_15
 #define LCD_BL_GPIO_Port GPIOB
+#define IIC_SCL_Pin GPIO_PIN_8
+#define IIC_SCL_GPIO_Port GPIOB
+#define IIC_SDA_Pin GPIO_PIN_9
+#define IIC_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 uint32_t get_4ms_tick();

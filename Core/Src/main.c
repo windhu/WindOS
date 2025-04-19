@@ -17,7 +17,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
 #include "main.h"
 #include "tim.h"
 #include "usart.h"
@@ -28,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "key.h"
 #include "lcd.h"
+#include <stdio.h>
+#include "fun_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,13 +70,18 @@ int _write(int fd, char *ptr, int len) {
 
 void other_task() {
   //do nothing now
+  /* checking timer is ok?
+  extern void delay_us();
+  printf("test 1 second\r\n");
+  delay_us(1000000);
+  */
 }
 void tim_task() {
   /* 4ms */
   key_scan();
   if (tim_4ms_tick%250 == 0) {
     /* 1s */
-    test_lcd();
+    //test_lcd();
   }
 }
 uint32_t get_4ms_tick() {
@@ -128,6 +134,10 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t sysclkfreq = HAL_RCC_GetSysClockFreq();
+  printf("System clock freq = %ld\r\n", sysclkfreq);
+  show_logo_on_lcd();
+  draw_test_iic_window();
   while (1)
   {
     /* USER CODE END WHILE */

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "ios": "c",
+        "compare": "c",
+        "cstdint": "c",
+        "main.h": "c"
+    }
+}
