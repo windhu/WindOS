@@ -18,21 +18,20 @@ Key keys[] = {
 void on_key0(KeyState state) {
   if (state == KEY_IDLE) {
     HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-    //test iic write
-    test_iic_write_random();
+    test_key_handler(KEY_CODE_0);
   }
 }
 void on_key1(KeyState state) {
   if (state == KEY_IDLE) {
     HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-    //Test iic
-    test_iic_read();
+    test_key_handler(KEY_CODE_1);
   }
 }
 void on_key2(KeyState state) {
   if (state == KEY_IDLE) {
     HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+    test_mode_change();
   }
 }
 

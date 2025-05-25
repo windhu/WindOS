@@ -3,6 +3,11 @@
 #include "stm32f4xx_hal.h"
 
 #define DEBOUNCE_TIME    3  /* 3*4=12ms */
+typedef enum {
+    KEY_CODE_0,
+    KEY_CODE_1,
+    KEY_CODE_2,
+}KeyCode;
 
 typedef enum
 {

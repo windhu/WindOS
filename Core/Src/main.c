@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -27,8 +28,9 @@
 /* USER CODE BEGIN Includes */
 #include "key.h"
 #include "lcd.h"
-#include <stdio.h>
+#include "spi_norflash.h"
 #include "fun_test.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -79,6 +81,7 @@ void other_task() {
 void tim_task() {
   /* 4ms */
   key_scan();
+  norflash_write_task();
   if (tim_4ms_tick%250 == 0) {
     /* 1s */
     //test_lcd();
@@ -128,6 +131,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM6_Init();
   MX_FSMC_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -136,8 +140,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   uint32_t sysclkfreq = HAL_RCC_GetSysClockFreq();
   printf("System clock freq = %ld\r\n", sysclkfreq);
-  show_logo_on_lcd();
-  draw_test_iic_window();
+
+  test_mode_init();
+  
   while (1)
   {
     /* USER CODE END WHILE */
