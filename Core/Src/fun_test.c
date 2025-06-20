@@ -11,6 +11,8 @@ void draw_test_iic_window();
 void test_iic(uint8_t key_code);
 void draw_test_spi1_window();
 void test_spi1(uint8_t key_code);
+void draw_test_can_window();
+void test_can1(uint8_t key_code);
 
 typedef void (*mode_draw_window) (void); 
 typedef void (*mode_key_handler) (uint8_t key_code);
@@ -19,9 +21,10 @@ typedef struct {
     mode_key_handler handler;
 } TestMode;
 
-TestMode modes[2] = {
+TestMode modes[] = {
     {draw_test_iic_window, test_iic},
     {draw_test_spi1_window, test_spi1},
+    {draw_test_can_window, test_can1},
 };
 
 static uint16_t curr_pos_y = 0;
@@ -150,5 +153,50 @@ void test_spi1(uint8_t key_code) {
         y = rd_pos_y;
     }
     sprintf(out, "%02X%02X%02X", buf[0], buf[1], buf[2]);
+    lcd_draw_str(32*3, y, 32, RED, WHITE, out);
+}
+
+void draw_test_can_window() {
+    lcd_clear(WHITE);
+    curr_pos_y = 0;
+    show_logo_on_lcd();
+    curr_pos_y += 32;
+    lcd_draw_str(0, curr_pos_y, 32, RED, WHITE, "CAN");
+    wr_pos_y = curr_pos_y;
+    curr_pos_y += 32;
+
+    curr_pos_y += 32;
+    lcd_draw_str(0, curr_pos_y, 32, RED, WHITE, "WR:");
+    wr_pos_y = curr_pos_y;
+    curr_pos_y += 32;
+
+    curr_pos_y += 32;
+    lcd_draw_str(0, curr_pos_y, 32, RED, WHITE, "RD:");
+    rd_pos_y = curr_pos_y;
+    curr_pos_y += 32;
+}
+// uint8_t can_send_msg(uint32_t id, uint8_t *msg, uint8_t len);
+// uint8_t can_receive_msg(uint32_t id, uint8_t *buf);
+void test_can1(uint8_t key_code) {
+    uint16_t y = 0;
+    uint8_t buf[3] = {0};
+    uint8_t out[10] = {0};
+    static uint8_t feed = 0;
+    if (key_code == KEY_CODE_0) {
+        //write
+        buf[0] = 0xaa;
+        buf[1] = 0x55 + feed++;
+        if (can_send_msg(0x1234, buf, 2)) {
+            //fails
+            printf("failed to write to CAN1\r\n");
+        }
+        y = wr_pos_y;
+    }
+    else if (key_code == KEY_CODE_1) {
+        //read
+        can_receive_msg(0x1234, buf);
+        y = rd_pos_y;
+    }
+    sprintf(out, "%02X%02X", buf[0], buf[1]);
     lcd_draw_str(32*3, y, 32, RED, WHITE, out);
 }
