@@ -3,6 +3,7 @@
 #include <memory.h>
 #include "spi.h"
 #include "spi_norflash.h"
+#include "cmsis_os.h"
 
 #define FLASH_TIMEOUT     100
 #define FLASH_RDID        0x9F
@@ -211,8 +212,10 @@ void norflash_write_nocheck(uint8_t *pbuf, uint32_t addr, uint16_t datalen) {
     }
 }
 
-void norflash_write(uint8_t *pbuf, uint32_t addr, uint16_t datalen) {
-    if (datalen > SECTOR_LENGTH) {
+void norflash_write(uint8_t *pbuf, uint32_t addr, uint16_t datalen)
+{
+    if (datalen > SECTOR_LENGTH)
+    {
         // only support sector length write one time
         return;
     }
@@ -220,69 +223,81 @@ void norflash_write(uint8_t *pbuf, uint32_t addr, uint16_t datalen) {
     write_context.len = datalen;
     write_context.offset = 0;
     memcpy(nf_write_buf, pbuf, datalen);
-    write_context.sector = write_context.addr/SECTOR_LENGTH;
-    write_context.sector_offset = write_context.addr%SECTOR_LENGTH;
+    write_context.sector = write_context.addr / SECTOR_LENGTH;
+    write_context.sector_offset = write_context.addr % SECTOR_LENGTH;
     write_context.sector_remain = SECTOR_LENGTH - write_context.sector_offset;
-    if (write_context.len <= write_context.sector_remain) {
+    if (write_context.len <= write_context.sector_remain)
+    {
         write_context.sector_remain = write_context.len;
     }
     write_context.state = NF_STATE_WRITE;
 }
 
-void norflash_write_task() {
-    printf("in norflash_write\r\n");
-    int i = 0;
-    if (write_context.state == NF_STATE_IDEL) {
-        return;
-    }
-
-    if (write_context.state == NF_STATE_WRITE) {
-        norflash_read(nf_sector_buf, write_context.sector*SECTOR_LENGTH, SECTOR_LENGTH);
-        for (i = 0; i < write_context.sector_remain; i++) {
-            if (nf_sector_buf[i + write_context.sector_offset] != 0xFF) {
-                break;
+void norflash_write_task()
+{
+    for (;;)
+    {
+        int i = 0;
+        if (write_context.state == NF_STATE_WRITE)
+        {
+            norflash_read(nf_sector_buf, write_context.sector * SECTOR_LENGTH, SECTOR_LENGTH);
+            for (i = 0; i < write_context.sector_remain; i++)
+            {
+                if (nf_sector_buf[i + write_context.sector_offset] != 0xFF)
+                {
+                    break;
+                }
+            }
+            if (i < write_context.sector_remain)
+            {
+                for (i = 0; i < write_context.sector_remain; i++)
+                {
+                    nf_sector_buf[i + write_context.sector_offset] = nf_write_buf[i + write_context.offset];
+                }
+                norflash_erase_sector(write_context.sector);
+                write_context.state = NF_STATE_SECTOR_ERASE;
+            }
+            else
+            {
+                write_context.state = NF_STATE_WRITE_NOCHECK;
             }
         }
-        if (i < write_context.sector_remain) {
-            for (i = 0; i < write_context.sector_remain; i++) {
-                nf_sector_buf[i + write_context.sector_offset] = nf_write_buf[i + write_context.offset];
+        else if (write_context.state == NF_STATE_SECTOR_ERASE)
+        {
+            while (norflash_busy())
+            {
+                osDelay(4); // wait for erase to complete
             }
-            norflash_erase_sector(write_context.sector);
-            write_context.state = NF_STATE_SECTOR_ERASE;
+            write_context.state = NF_STATE_WRITE_AFTER_ERASE;
         }
-        else {
-            write_context.state = NF_STATE_WRITE_NOCHECK;
-        }
-        return;
-    }
-    else if (write_context.state == NF_STATE_SECTOR_ERASE){
-        if (norflash_busy()) {
-            return;
-        }
-        write_context.state = NF_STATE_WRITE_AFTER_ERASE;
-        return;
-    }
-    else if (write_context.state == NF_STATE_WRITE_NOCHECK || write_context.state == NF_STATE_WRITE_AFTER_ERASE) {
-        if (write_context.state == NF_STATE_WRITE_AFTER_ERASE) {
-            norflash_write_nocheck(nf_sector_buf, write_context.sector*SECTOR_LENGTH, SECTOR_LENGTH);
-        }
-        else {
-            norflash_write_nocheck(nf_write_buf+write_context.offset, write_context.addr, write_context.sector_remain);
-        }
-        if (write_context.len == write_context.sector_remain) {
-            write_context.state = NF_STATE_IDEL;
-        }
-        else {
-            write_context.sector++;
-            write_context.sector_offset = 0;
-            write_context.offset += write_context.sector_remain;
-            write_context.len -= write_context.sector_remain;
-            write_context.sector_remain = SECTOR_LENGTH;
-            if (write_context.len <= write_context.sector_remain) {
-                write_context.sector_remain = write_context.len;
+        else if (write_context.state == NF_STATE_WRITE_NOCHECK || write_context.state == NF_STATE_WRITE_AFTER_ERASE)
+        {
+            if (write_context.state == NF_STATE_WRITE_AFTER_ERASE)
+            {
+                norflash_write_nocheck(nf_sector_buf, write_context.sector * SECTOR_LENGTH, SECTOR_LENGTH);
             }
-            write_context.state = NF_STATE_WRITE;
+            else
+            {
+                norflash_write_nocheck(nf_write_buf + write_context.offset, write_context.addr, write_context.sector_remain);
+            }
+            if (write_context.len == write_context.sector_remain)
+            {
+                write_context.state = NF_STATE_IDEL;
+            }
+            else
+            {
+                write_context.sector++;
+                write_context.sector_offset = 0;
+                write_context.offset += write_context.sector_remain;
+                write_context.len -= write_context.sector_remain;
+                write_context.sector_remain = SECTOR_LENGTH;
+                if (write_context.len <= write_context.sector_remain)
+                {
+                    write_context.sector_remain = write_context.len;
+                }
+                write_context.state = NF_STATE_WRITE;
+            }
         }
-        return;
+        osDelay(4); // 4ms delay to prevent busy loop
     }
 }

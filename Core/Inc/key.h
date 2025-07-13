@@ -2,7 +2,7 @@
 #define __KEY_H
 #include "stm32f4xx_hal.h"
 
-#define DEBOUNCE_TIME    3  /* 3*4=12ms */
+#define DEBOUNCE_TIME    12   /* refer to configTICK_RATE_HZ */
 typedef enum {
     KEY_CODE_0,
     KEY_CODE_1,

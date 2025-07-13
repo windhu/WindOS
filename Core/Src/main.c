@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "can.h"
 #include "spi.h"
 #include "tim.h"
@@ -27,9 +28,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "key.h"
-#include "lcd.h"
-#include "spi_norflash.h"
 #include "fun_test.h"
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -57,6 +55,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -69,34 +68,6 @@ volatile uint32_t tim_4ms_tick = 0;
 int _write(int fd, char *ptr, int len) {
   HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
   return len;
-}
-
-void other_task() {
-  //do nothing now
-  /* checking timer is ok?
-  extern void delay_us();
-  printf("test 1 second\r\n");
-  delay_us(1000000);
-  */
-}
-void tim_task() {
-  /* 4ms */
-  key_scan();
-  norflash_write_task();
-  if (tim_4ms_tick%250 == 0) {
-    /* 1s */
-    //test_lcd();
-  }
-}
-uint32_t get_4ms_tick() {
-  return tim_4ms_tick;
-}
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  if (htim->Instance == TIM6) {
-    /* 4ms itmer */
-    tim_4ms_tick++;
-    tim_4ms_flag = 1;
-  }
 }
 /* USER CODE END 0 */
 
@@ -135,26 +106,26 @@ int main(void)
   MX_SPI1_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
-
+  uint32_t sysclkfreq = HAL_RCC_GetSysClockFreq();
+  printf("System clock freq = %ld\r\n", sysclkfreq);
+  test_mode_init();
   /* USER CODE END 2 */
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t sysclkfreq = HAL_RCC_GetSysClockFreq();
-  printf("System clock freq = %ld\r\n", sysclkfreq);
-
-  test_mode_init();
-  
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if (tim_4ms_flag) {
-      tim_4ms_flag = 0;
-      tim_task();
-    }
-    other_task();
   }
   /* USER CODE END 3 */
 }
@@ -207,6 +178,32 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+  if (htim->Instance == TIM6) {
+    /* 4ms itmer */
+    tim_4ms_tick++;
+    tim_4ms_flag = 1;
+  }
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

@@ -4,6 +4,7 @@
 #include "main.h"
 #include "fun_test.h"
 #include "stdio.h"
+#include "cmsis_os.h"
 
 void on_key0(KeyState state);
 void on_key1(KeyState state);
@@ -35,51 +36,67 @@ void on_key2(KeyState state) {
   }
 }
 
-void key_scan() {
+void key_scan()
+{
   uint8_t key_num = sizeof(keys) / sizeof(Key);
-  for (uint8_t i = 0; i < key_num; i++) {
-    Key *key = &keys[i];
-    uint8_t level = HAL_GPIO_ReadPin(key->port, key->pin);
-    uint32_t tick = get_4ms_tick();
-    switch (key->state)
+
+  for (;;)
+  {
+    for (uint8_t i = 0; i < key_num; i++)
     {
-    case KEY_IDLE:
-      if (level == 0) {
-        key->state = KEY_PRE_DOWN;
-        key->down_tick = tick;
-      }
-      break;
-    case KEY_PRE_DOWN:
-      if (level == 0) {
-        if ((tick - key->down_tick) >= DEBOUNCE_TIME) {
-          key->state = KEY_DOWN;
-          key->key_handle(key->state);
+      Key *key = &keys[i];
+      uint8_t level = HAL_GPIO_ReadPin(key->port, key->pin);
+      uint32_t tick = xTaskGetTickCount(); //get_4ms_tick();
+      switch (key->state)
+      {
+      case KEY_IDLE:
+        if (level == 0)
+        {
+          key->state = KEY_PRE_DOWN;
+          key->down_tick = tick;
         }
-      }
-      else {
-        key->state = KEY_IDLE;
-      }
-      break;
-    case KEY_DOWN:
-      if (level == 1) {
-        key->state = KEY_PRE_UP;
-        key->up_tick = tick;
-      }
-      else {
-        /* do nothing, may long press */
-      }
-      break;
-    case KEY_PRE_UP:
-      if (level == 1) {
-        if ((tick - key->up_tick) >= DEBOUNCE_TIME) {
+        break;
+      case KEY_PRE_DOWN:
+        if (level == 0)
+        {
+          if ((tick - key->down_tick) >= DEBOUNCE_TIME)
+          {
+            key->state = KEY_DOWN;
+            key->key_handle(key->state);
+          }
+        }
+        else
+        {
           key->state = KEY_IDLE;
-          key->key_handle(key->state);
         }
+        break;
+      case KEY_DOWN:
+        if (level == 1)
+        {
+          key->state = KEY_PRE_UP;
+          key->up_tick = tick;
+        }
+        else
+        {
+          /* do nothing, may long press */
+        }
+        break;
+      case KEY_PRE_UP:
+        if (level == 1)
+        {
+          if ((tick - key->up_tick) >= DEBOUNCE_TIME)
+          {
+            key->state = KEY_IDLE;
+            key->key_handle(key->state);
+          }
+        }
+        else
+        {
+          key->state = KEY_DOWN;
+        }
+        break;
       }
-      else {
-        key->state = KEY_DOWN;
-      }
-      break;
     }
+    osDelay(8); // 8ms delay
   }
 }
