@@ -4,6 +4,6 @@
 # STM32 Development Environment
 * Develop Machine: MacOS
 * Toolchain: ARM Embedded GCC (arm-none-eabi)
-* IDE: Visual Studio Code (+ Extensions)
-* Debugger: ST-Link/V2
+* IDE: STM32CubeMX, Visual Studio Code (+ Extensions)
+* Debugger: ST-Link/V2, GDB
 * Hardware: STM32F407 Discovery Board
