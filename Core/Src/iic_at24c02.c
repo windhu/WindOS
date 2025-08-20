@@ -1,6 +1,7 @@
 #include "iic_at24c02.h"
 #include "gpio.h"
 #include "util.h"
+#include "cmsis_os.h"
 
 #define IIC_DELAY()  delay_us(2)
 
@@ -172,5 +173,6 @@ void at24c02_write(uint16_t addr, uint8_t *pbuf, uint16_t datalen) {
         at24c02_write_one_byte(addr, *pbuf);
         addr++;
         pbuf++;
+        osDelay(5);
     }
 }
