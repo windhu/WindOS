@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "can.h"
 #include "rng.h"
+#include "sdio.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -108,6 +109,7 @@ int main(void)
   MX_SPI1_Init();
   MX_CAN1_Init();
   MX_RNG_Init();
+  MX_SDIO_SD_Init();
   /* USER CODE BEGIN 2 */
   lvgl_gui_init();
   test_mode_init();

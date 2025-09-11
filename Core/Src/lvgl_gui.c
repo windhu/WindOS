@@ -13,7 +13,7 @@
 #define LABEL_WIDTH  150
 
 #define MESSAGE_BUFFER_SIZE 100
-#define MESSAGE_ITEM_SIZE   16
+#define MESSAGE_ITEM_SIZE   32
 
 MessageBufferHandle_t gui_message_handle;
 
@@ -26,7 +26,9 @@ static lv_obj_t *write_label = NULL;
 static lv_obj_t *read_label = NULL;
 static lv_obj_t *write_data_label = NULL;
 static lv_obj_t *read_data_label = NULL;
-
+static lv_obj_t *sd_label = NULL;
+static lv_obj_t *sd_data_label = NULL;
+static lv_obj_t *arc_widge;
 static void draw_logo();
 static void draw_welcome_screen();
 static void draw_enter_mode();
@@ -40,16 +42,24 @@ void lvgl_gui_init() {
 }
 
 void lvgl_gui_main() {
-    char str[32] = {0};
+    char str[128] = {0};
     size_t xReceivedBytes;
     xReceivedBytes = xMessageBufferReceive(gui_message_handle,(void *) messageItem, sizeof(messageItem), 0);
     if (xReceivedBytes <= 0) {
         return;
     }
+    printf("receive bytes: %d\r\n", xReceivedBytes);
     // first is the command
     if (messageItem[0] == ENTER_IIC_MODE) {
         if (mode_label == NULL) {
             draw_enter_mode();
+        }
+        else {
+            lv_label_set_text(write_label, "Write data:");
+            lv_label_set_text(read_label, "Read data:");
+            lv_obj_clear_flag(arc_widge, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
         }
         lv_label_set_text(mode_label, "IIC Mode");
         lv_label_set_text(write_data_label, "");
@@ -64,6 +74,17 @@ void lvgl_gui_main() {
         lv_label_set_text(mode_label, "CAN Mode");
         lv_label_set_text(write_data_label, "");
         lv_label_set_text(read_data_label, "");
+    }
+    else if (messageItem[0] == ENTER_SD_MODE) {
+        lv_label_set_text(mode_label, "SD Card Mode");
+        lv_label_set_text(write_label, "Card Type:");
+        lv_label_set_text(read_label, "Capacity:");
+        lv_label_set_text(write_data_label, "");
+        lv_label_set_text(read_data_label, "");
+        lv_label_set_text(sd_data_label, "");
+        lv_obj_add_flag(arc_widge, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
     }
     else if (messageItem[0] == ENTER_LVGL_MODE) {
         lv_label_set_text(mode_label, "LVGL Mode");
@@ -83,6 +104,20 @@ void lvgl_gui_main() {
             sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
         }
         lv_label_set_text(read_data_label, str);
+    }
+    else if (messageItem[0] == SD_INFO) {
+        if (messageItem[1] == 1) {
+            lv_label_set_text(write_data_label, &messageItem[2]);
+        }
+        else if (messageItem[1] == 2) {
+            lv_label_set_text(read_data_label, &messageItem[2]);
+        }
+    }
+    else if (messageItem[0] == SD_DATA) {
+        for (int i = 1; i < xReceivedBytes; i++) {
+            sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
+        }
+        lv_label_set_text(sd_data_label, str);
     }
 }
 
@@ -159,6 +194,20 @@ static void draw_enter_mode()
     lv_obj_set_height(read_data_label, LABEL_HEIGHT);
     lv_obj_set_width(read_data_label, LABEL_WIDTH);
 
+    sd_label = lv_label_create(lv_scr_act());
+    lv_label_set_text(sd_label, "First 27 byte:");
+    lv_obj_align(sd_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
+    lv_obj_set_height(sd_label, LABEL_HEIGHT);
+    lv_obj_set_width(sd_label, LABEL_WIDTH);
+    lv_obj_add_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
+
+    sd_data_label = lv_label_create(lv_scr_act());
+    lv_label_set_text(sd_data_label, "");
+    lv_obj_align(sd_data_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
+    lv_obj_set_height(sd_data_label, LABEL_HEIGHT*3);
+    lv_obj_set_width(sd_data_label, LABEL_WIDTH);
+    lv_obj_add_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
+
     lv_label_set_text(start_btn_label, "Stop");
 }
 
@@ -173,16 +222,16 @@ static void set_angle(void * obj, int32_t v)
 static void lv_example_arc_2(void)
 {
     /*Create an Arc*/
-    lv_obj_t * arc = lv_arc_create(lv_screen_active());
-    lv_arc_set_rotation(arc, 270);
-    lv_arc_set_bg_angles(arc, 0, 360);
-    lv_obj_remove_style(arc, NULL, LV_PART_KNOB);   /*Be sure the knob is not displayed*/
-    lv_obj_remove_flag(arc, LV_OBJ_FLAG_CLICKABLE);  /*To not allow adjusting by click*/
-    lv_obj_align(arc, LV_ALIGN_CENTER, 0, 30);
+    arc_widge = lv_arc_create(lv_screen_active());
+    lv_arc_set_rotation(arc_widge, 270);
+    lv_arc_set_bg_angles(arc_widge, 0, 360);
+    lv_obj_remove_style(arc_widge, NULL, LV_PART_KNOB);   /*Be sure the knob is not displayed*/
+    lv_obj_remove_flag(arc_widge, LV_OBJ_FLAG_CLICKABLE);  /*To not allow adjusting by click*/
+    lv_obj_align(arc_widge, LV_ALIGN_CENTER, 0, 30);
 
     lv_anim_t a;
     lv_anim_init(&a);
-    lv_anim_set_var(&a, arc);
+    lv_anim_set_var(&a, arc_widge);
     lv_anim_set_exec_cb(&a, set_angle);
     lv_anim_set_duration(&a, 1000);
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);    /*Just for the demo*/

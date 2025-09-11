@@ -9,6 +9,8 @@
 #include "lvgl_gui.h"
 #include "FreeRTOS.h"
 #include "message_buffer.h"
+#include "sdio.h"
+#include "string.h"
 
 extern MessageBufferHandle_t gui_message_handle;
 extern uint32_t get_random_number(void);
@@ -16,6 +18,7 @@ extern uint32_t get_random_number(void);
 void test_iic(uint8_t key_code);
 void test_spi1(uint8_t key_code);
 void test_can1(uint8_t key_code);
+void test_sd(uint8_t key_code);
 static void get_4bytes_random(uint8_t *buf);
 
 typedef void (*mode_draw_window) (void); 
@@ -29,6 +32,7 @@ TestMode modes[] = {
     {ENTER_IIC_MODE, test_iic},
     {ENTER_SPI_MODE, test_spi1},
     {ENTER_CAN_MODE, test_can1},
+    {ENTER_SD_MODE, test_sd},
 };
 
 static int8_t curr_test_mode = -1;
@@ -123,6 +127,94 @@ void test_can1(uint8_t key_code) {
     size_t sbyte = xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
     if (sbyte != sizeof(buf)) {
         printf("Send message buffer for CAN failed, sbyte:%d\r\n", sbyte);
+    }
+}
+
+static uint8_t sd_sector_buf[512];
+void test_sd(uint8_t key_code)
+{   
+    HAL_SD_CardStatusTypeDef card_status;
+    HAL_SD_CardInfoTypeDef card_info;
+    uint8_t buf[32 - 4]; // max message is 28 bytes
+    size_t sbyte = 0;
+    if (key_code == KEY_CODE_0) {
+        // if (sd_read_card_status(&card_status)) {
+        //     printf("failed to read sd card status\r\n");
+        // }
+        // else {
+        //     printf("SpeedClass:%d\r\n", card_status.SpeedClass);
+        // }
+
+        if (sd_read_card_info(&card_info)) {
+            printf("failed to read sd card information\r\n");
+        }
+        else {
+            buf[0] = SD_INFO;
+            buf[1] = 1; // card type
+            switch (card_info.CardType)
+            {
+            case CARD_SDSC:
+                // sprinf("SDSC (Standard Capacity)\r\n");
+                strcpy(&buf[2], "SDSC");
+                break;
+            case CARD_SDHC_SDXC:
+                // printf("SDHC/SDXC (High/Extended Capacity)\r\n");
+                strcpy(&buf[2], "SDHC/SDXC");
+                break;
+            case CARD_SECURED:
+                // printf("Secured Digital Card\r\n");
+                strcpy(&buf[2], "Secured Digital Card");
+                break;
+            default:
+                // printf("Unknown (%lu)\r\n", card_info.CardType);
+                strcpy(&buf[2], "Unknown");
+            }
+            sbyte = xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
+            if (sbyte != sizeof(buf)) {
+                printf("Send message buffer for SD Card information failed, sbyte:%d\r\n", sbyte);
+            }
+            // printf("Card Version: %lu\r\n", card_info.CardVersion);
+            // printf("Class: %lu\r\n", card_info.Class);
+            // printf("Relative Card Address (RCA): 0x%04lX\r\n", card_info.RelCardAdd);
+            // printf("Block Size: %lu bytes\r\n", card_info.BlockSize);
+            // printf("Logical Block Number: %lu\r\n", card_info.LogBlockNbr);
+            // printf("Logical Block Size: %lu bytes\r\n", card_info.LogBlockSize);
+
+            // capacity
+            uint64_t capacity_bytes = (uint64_t)card_info.LogBlockNbr * card_info.LogBlockSize;
+            uint32_t capacity_mb = capacity_bytes / (1024 * 1024);
+            uint32_t capacity_gb = capacity_bytes / (1024 * 1024 * 1024);
+
+            // printf("Total Capacity: %llu bytes\r\n", capacity_bytes);
+            // printf("Total Capacity: %lu MB\r\n", capacity_mb);
+            // printf("Total Capacity: %lu GB\r\n", capacity_gb);
+            // printf("================================\r\n");
+            buf[1] = 2; // capacity
+            snprintf(&buf[2], 16, "%lu GB", capacity_gb);
+            sbyte = xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
+            if (sbyte != sizeof(buf)) {
+                printf("Send message buffer for SD Card information failed, sbyte:%d\r\n", sbyte);
+            }
+        }
+    }
+    else if (key_code == KEY_CODE_1) {
+        buf[0] = SD_DATA;
+        if (sd_read_disk(sd_sector_buf, 0, 1) != SD_TRANSFER_OK) {
+            printf("Read data from sd card failed\r\n");
+        }
+        else {
+            // for (int i = 0; i < 512; i++) {
+            //     if (sd_sector_buf[i] != 0) {
+            //         printf("%i=%d ", i, sd_sector_buf[i]);
+            //     }
+            // }
+            // printf("\r\n");
+            memcpy(&buf[1], sd_sector_buf, sizeof(buf) - 1);
+            sbyte = xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
+            if (sbyte != sizeof(buf)) {
+                printf("Send message buffer for SD Card data failed, sbyte:%d\r\n", sbyte);
+            }
+        }
     }
 }
 
