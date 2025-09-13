@@ -11,6 +11,7 @@
 #include "message_buffer.h"
 #include "sdio.h"
 #include "string.h"
+#include "ff.h"
 
 extern MessageBufferHandle_t gui_message_handle;
 extern uint32_t get_random_number(void);
@@ -19,9 +20,12 @@ void test_iic(uint8_t key_code);
 void test_spi1(uint8_t key_code);
 void test_can1(uint8_t key_code);
 void test_sd(uint8_t key_code);
-static void get_4bytes_random(uint8_t *buf);
+void test_fatfs(uint8_t key_code);
 
-typedef void (*mode_draw_window) (void); 
+static void get_4bytes_random(uint8_t *buf);
+// buffer shared by all test for saving memory
+static uint8_t test_tmp_buf[512];
+
 typedef void (*mode_key_handler) (uint8_t key_code);
 typedef struct {
     uint8_t mode_signal;
@@ -33,9 +37,18 @@ TestMode modes[] = {
     {ENTER_SPI_MODE, test_spi1},
     {ENTER_CAN_MODE, test_can1},
     {ENTER_SD_MODE, test_sd},
+    {ENTER_FATFS_MODE, test_fatfs},
 };
 
 static int8_t curr_test_mode = -1;
+
+static void get_4bytes_random(uint8_t *buf) {
+    uint32_t data = get_random_number();
+    buf[0] = data & 0xff;
+    buf[1] = (data >> 8) & 0xff;
+    buf[2] = (data >> 16) & 0xff;
+    buf[3] = (data >> 24) & 0xff;
+}
 
 void test_mode_init() {
     norflash_init();
@@ -106,8 +119,6 @@ void test_spi1(uint8_t key_code) {
     }
 }
 
-// uint8_t can_send_msg(uint32_t id, uint8_t *msg, uint8_t len);
-// uint8_t can_receive_msg(uint32_t id, uint8_t *buf);
 void test_can1(uint8_t key_code) {
     uint8_t buf[5] = {0};
     if (key_code == KEY_CODE_0) {
@@ -130,7 +141,6 @@ void test_can1(uint8_t key_code) {
     }
 }
 
-static uint8_t sd_sector_buf[512];
 void test_sd(uint8_t key_code)
 {   
     HAL_SD_CardStatusTypeDef card_status;
@@ -199,7 +209,7 @@ void test_sd(uint8_t key_code)
     }
     else if (key_code == KEY_CODE_1) {
         buf[0] = SD_DATA;
-        if (sd_read_disk(sd_sector_buf, 0, 1) != SD_TRANSFER_OK) {
+        if (sd_read_disk(test_tmp_buf, 0, 1) != SD_TRANSFER_OK) {
             printf("Read data from sd card failed\r\n");
         }
         else {
@@ -209,19 +219,11 @@ void test_sd(uint8_t key_code)
             //     }
             // }
             // printf("\r\n");
-            memcpy(&buf[1], sd_sector_buf, sizeof(buf) - 1);
+            memcpy(&buf[1], test_tmp_buf, sizeof(buf) - 1);
             sbyte = xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
             if (sbyte != sizeof(buf)) {
                 printf("Send message buffer for SD Card data failed, sbyte:%d\r\n", sbyte);
             }
         }
     }
-}
-
-static void get_4bytes_random(uint8_t *buf) {
-    uint32_t data = get_random_number();
-    buf[0] = data & 0xff;
-    buf[1] = (data >> 8) & 0xff;
-    buf[2] = (data >> 16) & 0xff;
-    buf[3] = (data >> 24) & 0xff;
 }

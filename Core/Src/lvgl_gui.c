@@ -81,10 +81,20 @@ void lvgl_gui_main() {
         lv_label_set_text(read_label, "Capacity:");
         lv_label_set_text(write_data_label, "");
         lv_label_set_text(read_data_label, "");
+        lv_label_set_text(sd_label, "First 27 byte:");
         lv_label_set_text(sd_data_label, "");
         lv_obj_add_flag(arc_widge, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
+    }
+    else if (messageItem[0] == ENTER_FATFS_MODE) {
+        lv_label_set_text(mode_label, "FATFS Mode");
+        lv_label_set_text(write_label, "Dir:");
+        lv_label_set_text(read_label, "File:");
+        lv_label_set_text(write_data_label, "test");
+        lv_label_set_text(read_data_label, "test.txt");
+        lv_label_set_text(sd_label, "File Content:");
+        lv_label_set_text(sd_data_label, "");
     }
     else if (messageItem[0] == ENTER_LVGL_MODE) {
         lv_label_set_text(mode_label, "LVGL Mode");
@@ -118,6 +128,9 @@ void lvgl_gui_main() {
             sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
         }
         lv_label_set_text(sd_data_label, str);
+    }
+    else if (messageItem[0] == FILE_CONTENT) {
+        lv_label_set_text(sd_data_label, &messageItem[1]);
     }
 }
 
@@ -195,7 +208,7 @@ static void draw_enter_mode()
     lv_obj_set_width(read_data_label, LABEL_WIDTH);
 
     sd_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(sd_label, "First 27 byte:");
+    lv_label_set_text(sd_label, "");
     lv_obj_align(sd_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
     lv_obj_set_height(sd_label, LABEL_HEIGHT);
     lv_obj_set_width(sd_label, LABEL_WIDTH);

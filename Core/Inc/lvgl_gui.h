@@ -6,12 +6,14 @@ enum LVGLCommand {
     ENTER_SPI_MODE,
     ENTER_CAN_MODE,
     ENTER_SD_MODE,
+    ENTER_FATFS_MODE,
     ENTER_LVGL_MODE,
 
     UPDATE_WRITE = 20,
     UPDATE_READ,
     SD_INFO,
     SD_DATA,
+    FILE_CONTENT,
 };
 
 void lvgl_gui_init();

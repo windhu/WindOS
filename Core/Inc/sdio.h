@@ -47,6 +47,9 @@ uint8_t sd_read_card_status(HAL_SD_CardStatusTypeDef *pStatus);
 uint8_t sd_read_card_info(HAL_SD_CardInfoTypeDef *pCardInfo);
 uint8_t sd_read_disk(uint8_t *pbuf, uint32_t saddr, uint32_t cnt);
 uint8_t sd_write_disk(uint8_t *pbuf, uint32_t saddr, uint32_t cnt);
+
+uint32_t sd_get_LogBlockNbr();
+uint32_t sd_get_LogBlockSize();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

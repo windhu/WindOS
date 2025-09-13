@@ -192,4 +192,12 @@ uint8_t sd_write_disk(uint8_t *pbuf, uint32_t saddr, uint32_t cnt)
     
     return status;
 }
+
+uint32_t sd_get_LogBlockNbr() {
+    return hsd.SdCard.LogBlockNbr;
+}
+
+uint32_t sd_get_LogBlockSize() {
+    return hsd.SdCard.LogBlockSize;
+}
 /* USER CODE END 1 */

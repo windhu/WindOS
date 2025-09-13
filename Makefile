@@ -10,7 +10,8 @@
 #   2015-07-22 - first version
 # ------------------------------------------------
 
-include Drivers/lvgl/lvgl.mk
+include Middlewares/Third_Party/lvgl/lvgl.mk
+include Middlewares/Third_Party/ff16/ff.mk
 
 ######################################
 # target

@@ -134,7 +134,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  osThreadDef(keyTask, key_scan, osPriorityNormal, 0, 128);
+  osThreadDef(keyTask, key_scan, osPriorityNormal, 0, 256);
   keyTaskHandle = osThreadCreate(osThread(keyTask), NULL);
 
 

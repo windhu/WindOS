@@ -1,5 +1,5 @@
 # LVGL_PATH ?= ${shell pwd}/lvgl
-LVGL_PATH ?= ${shell pwd}/Drivers/lvgl
+LVGL_PATH ?= ${shell pwd}/Middlewares/Third_Party/lvgl
 
 ASRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.S')
 CSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.c')
