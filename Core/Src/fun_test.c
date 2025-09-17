@@ -227,3 +227,35 @@ void test_sd(uint8_t key_code)
         }
     }
 }
+
+static uint8_t fs_mounted = 0;
+static FATFS fs;
+void test_fatfs(uint8_t key_code) {
+    FIL file;
+    FRESULT res;
+    UINT bytes_read = 0;
+    size_t sbyte = 0;
+    if (fs_mounted == 0) {
+        if (f_mount(&fs, "", 1)) {
+            printf("failed to mount fs\r\n");
+        }
+        else {
+            fs_mounted = 1;
+        }
+    }
+    if (key_code == KEY_CODE_0 || key_code == KEY_CODE_1) {
+        // open file
+        res = f_open(&file, "/test/test.txt", FA_READ);
+        if (res == FR_OK) {
+            test_tmp_buf[0] = FILE_CONTENT;
+            f_read(&file, &test_tmp_buf[1], sizeof(test_tmp_buf), &bytes_read);
+            f_close(&file);
+            test_tmp_buf[bytes_read + 1] = '\0';
+            // printf("content: %s\n", test_tmp_buf);
+            sbyte = xMessageBufferSend(gui_message_handle,(void *) test_tmp_buf, bytes_read + 1 + 1, 0);
+            if (sbyte != bytes_read + 1 + 1) {
+                printf("Send message buffer for file content failed, sbyte:%d\r\n", sbyte);
+            }
+        }
+    }
+}
