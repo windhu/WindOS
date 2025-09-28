@@ -28,15 +28,12 @@ DSTATUS disk_status (
 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS stat;
-	int result;
 	if (pdrv != DEV_SD)
 		return STA_NOINIT;
 
     if (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {
         return STA_NOINIT;
     }
-
 	return RES_OK;
 }
 

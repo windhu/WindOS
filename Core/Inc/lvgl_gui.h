@@ -7,6 +7,7 @@ enum LVGLCommand {
     ENTER_CAN_MODE,
     ENTER_SD_MODE,
     ENTER_FATFS_MODE,
+    ENTER_AUD_PLAYER,
     ENTER_LVGL_MODE,
 
     UPDATE_WRITE = 20,
@@ -14,6 +15,9 @@ enum LVGLCommand {
     SD_INFO,
     SD_DATA,
     FILE_CONTENT,
+    SPK_VOLUMN,
+    PLAYER_START,
+    PLAYER_STOP,
 };
 
 void lvgl_gui_init();

@@ -9,11 +9,13 @@
 void on_key0(KeyState state);
 void on_key1(KeyState state);
 void on_key2(KeyState state);
+void on_key3(KeyState state);
 
 Key keys[] = {
     {KEY0_GPIO_Port, KEY0_Pin, KEY_IDLE, 0, 0, &on_key0},
     {KEY1_GPIO_Port, KEY1_Pin, KEY_IDLE, 0, 0, &on_key1},
-    {KEY2_GPIO_Port, KEY2_Pin, KEY_IDLE, 0, 0, &on_key2}
+    {KEY2_GPIO_Port, KEY2_Pin, KEY_IDLE, 0, 0, &on_key2},
+    {KEY3_GPIO_Port, KEY3_Pin, KEY_IDLE, 0, 0, &on_key3}
 };
 
 void on_key0(KeyState state) {
@@ -33,6 +35,11 @@ void on_key2(KeyState state) {
     HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
     test_mode_change();
+  }
+}
+void on_key3(KeyState state) {
+  if (state == KEY_IDLE) {
+    test_key_handler(KEY_CODE_3);
   }
 }
 

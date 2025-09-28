@@ -49,6 +49,9 @@
 /* USER CODE BEGIN Variables */
 osThreadId keyTaskHandle;
 osThreadId flashWriteTaskHandle;
+osThreadId playerTaskHandle;
+
+extern void player_task();
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -137,9 +140,11 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(keyTask, key_scan, osPriorityNormal, 0, 256);
   keyTaskHandle = osThreadCreate(osThread(keyTask), NULL);
 
-
   osThreadDef(flashWriteTask, norflash_write_task, osPriorityNormal, 0, 128);
   flashWriteTaskHandle = osThreadCreate(osThread(flashWriteTask), NULL);
+
+  osThreadDef(playerTask, player_task, osPriorityNormal, 0, 1024);
+  playerTaskHandle = osThreadCreate(osThread(playerTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
 }

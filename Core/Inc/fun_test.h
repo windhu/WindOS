@@ -2,6 +2,11 @@
 #define __FUN_TEST_H
 #include "stdint.h"
 
+#define EVENT_KEY0  (1<<0)
+#define EVENT_KEY1  (1<<1)
+#define EVENT_KEY2  (1<<2)
+#define EVENT_KEY3  (1<<3)
+
 void test_mode_init();
 void test_mode_change();
 void test_key_handler(uint8_t key_code);

@@ -15,6 +15,8 @@
 #define MESSAGE_BUFFER_SIZE 100
 #define MESSAGE_ITEM_SIZE   32
 
+extern uint8_t spk_volumn_val; // TODO: global variable is not a good idea
+
 MessageBufferHandle_t gui_message_handle;
 
 static char messageItem[32];
@@ -96,6 +98,13 @@ void lvgl_gui_main() {
         lv_label_set_text(sd_label, "File Content:");
         lv_label_set_text(sd_data_label, "");
     }
+    else if (messageItem[0] == ENTER_AUD_PLAYER) {
+        lv_label_set_text(mode_label, "Player Mode");
+        lv_label_set_text(read_data_label, "your_16.wav");
+        lv_label_set_text(sd_label, "Audio Volumn:");
+        sprintf(str, "%d", spk_volumn_val);
+        lv_label_set_text(sd_data_label, str);
+    }
     else if (messageItem[0] == ENTER_LVGL_MODE) {
         lv_label_set_text(mode_label, "LVGL Mode");
         lv_label_set_text(write_data_label, "");
@@ -131,6 +140,16 @@ void lvgl_gui_main() {
     }
     else if (messageItem[0] == FILE_CONTENT) {
         lv_label_set_text(sd_data_label, &messageItem[1]);
+    }
+    else if (messageItem[0] == SPK_VOLUMN) {
+        sprintf(str, "%d", messageItem[1]);
+        lv_label_set_text(sd_data_label, str);
+    }
+    else if (messageItem[0] == PLAYER_START) {
+        lv_label_set_text(start_btn_label, "Playing");
+    }
+    else if (messageItem[0] == PLAYER_STOP) {
+        lv_label_set_text(start_btn_label, "Stop");
     }
 }
 

@@ -4,9 +4,10 @@
 
 #define DEBOUNCE_TIME    12   /* refer to configTICK_RATE_HZ */
 typedef enum {
-    KEY_CODE_0,
-    KEY_CODE_1,
-    KEY_CODE_2,
+    KEY_CODE_0, // right
+    KEY_CODE_1, // down
+    KEY_CODE_2, // left
+    KEY_CODE_3, // up
 }KeyCode;
 
 typedef enum

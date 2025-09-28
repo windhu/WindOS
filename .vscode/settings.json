@@ -8,6 +8,8 @@
         "cmsis_os.h": "c",
         "freertos.h": "c",
         "iic_at24c02.h": "c",
-        "random": "c"
+        "random": "c",
+        "iic.h": "c",
+        "dma.h": "c"
     }
 }

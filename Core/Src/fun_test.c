@@ -8,6 +8,7 @@
 #include "spi_norflash.h"
 #include "lvgl_gui.h"
 #include "FreeRTOS.h"
+#include "event_groups.h"
 #include "message_buffer.h"
 #include "sdio.h"
 #include "string.h"
@@ -21,6 +22,7 @@ void test_spi1(uint8_t key_code);
 void test_can1(uint8_t key_code);
 void test_sd(uint8_t key_code);
 void test_fatfs(uint8_t key_code);
+void test_audio(uint8_t key_code);
 
 static void get_4bytes_random(uint8_t *buf);
 // buffer shared by all test for saving memory
@@ -38,6 +40,7 @@ TestMode modes[] = {
     {ENTER_CAN_MODE, test_can1},
     {ENTER_SD_MODE, test_sd},
     {ENTER_FATFS_MODE, test_fatfs},
+    {ENTER_AUD_PLAYER, test_audio},
 };
 
 static int8_t curr_test_mode = -1;
@@ -50,7 +53,22 @@ static void get_4bytes_random(uint8_t *buf) {
     buf[3] = (data >> 24) & 0xff;
 }
 
+static FATFS fs;
+static uint8_t fs_mounted = 0;
+EventGroupHandle_t keyEventGroup;
 void test_mode_init() {
+    if (fs_mounted == 0) {
+        if (f_mount(&fs, "", 1)) {
+            printf("failed to mount fs\r\n");
+        }
+        else {
+            fs_mounted = 1;
+        }
+    }
+    keyEventGroup = xEventGroupCreate();
+    if (keyEventGroup == NULL) {
+        printf("failed to create key event group\r\n");
+    }
     norflash_init();
 }
 
@@ -228,21 +246,11 @@ void test_sd(uint8_t key_code)
     }
 }
 
-static uint8_t fs_mounted = 0;
-static FATFS fs;
 void test_fatfs(uint8_t key_code) {
     FIL file;
     FRESULT res;
     UINT bytes_read = 0;
     size_t sbyte = 0;
-    if (fs_mounted == 0) {
-        if (f_mount(&fs, "", 1)) {
-            printf("failed to mount fs\r\n");
-        }
-        else {
-            fs_mounted = 1;
-        }
-    }
     if (key_code == KEY_CODE_0 || key_code == KEY_CODE_1) {
         // open file
         res = f_open(&file, "/test/test.txt", FA_READ);
@@ -257,5 +265,18 @@ void test_fatfs(uint8_t key_code) {
                 printf("Send message buffer for file content failed, sbyte:%d\r\n", sbyte);
             }
         }
+    }
+}
+
+void test_audio(uint8_t key_code) {
+    EventBits_t uxBits;
+    if (key_code == KEY_CODE_0) {
+        uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY0);
+    }
+    else if (key_code == KEY_CODE_1) {
+        uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY1);
+    }
+    else if (key_code == KEY_CODE_3) {
+        uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY3);
     }
 }
