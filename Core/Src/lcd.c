@@ -43,7 +43,7 @@ void LcdDev_init() {
     lcddev.id = lcd_rd_data();
     lcddev.id <<= 8;
     lcddev.id |= lcd_rd_data(); 
-    printf("LCD ID:%x\r\n", lcddev.id); // id = 0x7796
+    printf("LCD ID:0x%x\r\n", lcddev.id); // id = 0x7796
     /* LCD reg init start */
     lcd_wr_regno(0x11);
 

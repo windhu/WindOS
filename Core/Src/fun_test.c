@@ -13,6 +13,7 @@
 #include "sdio.h"
 #include "string.h"
 #include "ff.h"
+#include "touch.h"
 
 extern MessageBufferHandle_t gui_message_handle;
 extern uint32_t get_random_number(void);
@@ -23,6 +24,7 @@ void test_can1(uint8_t key_code);
 void test_sd(uint8_t key_code);
 void test_fatfs(uint8_t key_code);
 void test_audio(uint8_t key_code);
+void test_touch(uint8_t key_code);
 
 static void get_4bytes_random(uint8_t *buf);
 // buffer shared by all test for saving memory
@@ -35,12 +37,13 @@ typedef struct {
 } TestMode;
 
 TestMode modes[] = {
-    {ENTER_IIC_MODE, test_iic},
-    {ENTER_SPI_MODE, test_spi1},
-    {ENTER_CAN_MODE, test_can1},
-    {ENTER_SD_MODE, test_sd},
-    {ENTER_FATFS_MODE, test_fatfs},
-    {ENTER_AUD_PLAYER, test_audio},
+    {ENTER_IIC_MODE, test_iic},     // 0
+    {ENTER_SPI_MODE, test_spi1},    // 1
+    {ENTER_CAN_MODE, test_can1},    // 2
+    {ENTER_SD_MODE, test_sd},       // 3
+    {ENTER_FATFS_MODE, test_fatfs}, // 4
+    {ENTER_AUD_PLAYER, test_audio}, // 5
+    {ENTER_TOUCH_MODE, test_touch}, // 6
 };
 
 static int8_t curr_test_mode = -1;
@@ -256,14 +259,18 @@ void test_fatfs(uint8_t key_code) {
         res = f_open(&file, "/test/test.txt", FA_READ);
         if (res == FR_OK) {
             test_tmp_buf[0] = FILE_CONTENT;
-            f_read(&file, &test_tmp_buf[1], sizeof(test_tmp_buf), &bytes_read);
+            // f_read(&file, &test_tmp_buf[1], sizeof(test_tmp_buf), &bytes_read);
+            f_read(&file, &test_tmp_buf[1], 24, &bytes_read);
             f_close(&file);
             test_tmp_buf[bytes_read + 1] = '\0';
-            // printf("content: %s\n", test_tmp_buf);
+            // printf("content: %s, size=%d\r\n", test_tmp_buf, bytes_read);
             sbyte = xMessageBufferSend(gui_message_handle,(void *) test_tmp_buf, bytes_read + 1 + 1, 0);
-            if (sbyte != bytes_read + 1 + 1) {
+            if (sbyte != (bytes_read + 1 + 1)) {
                 printf("Send message buffer for file content failed, sbyte:%d\r\n", sbyte);
             }
+        }
+        else {
+            printf("Failed to open file\r\n");
         }
     }
 }
@@ -278,5 +285,38 @@ void test_audio(uint8_t key_code) {
     }
     else if (key_code == KEY_CODE_3) {
         uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY3);
+    }
+}
+
+void td_adjust_callback(uint8_t step, uint8_t result) {
+    uint8_t buf[5] = {0};
+    buf[0] = TP_ADJUST;
+    buf[1] = step;
+    buf[2] = result;
+    xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
+}
+
+void test_touch(uint8_t key_code) {
+    EventBits_t uxBits;
+    if (key_code == KEY_CODE_0) {
+        // uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY0);
+        tp_adjust(td_adjust_callback);
+    }
+    else if (key_code == KEY_CODE_1) {
+        // uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY1);
+    }
+    else if (key_code == KEY_CODE_3) {
+        // uxBits = xEventGroupSetBits(keyEventGroup, EVENT_KEY3);
+    }
+}
+
+void test_touch_tp_pressed(uint16_t x, uint16_t y) {
+    uint8_t buf[5] = {0};
+    // Touch Adjust mode
+    if (curr_test_mode == 6) {
+        buf[0] = TP_PRESSED;
+        *(uint16_t *)(&buf[1]) = x;
+        *(uint16_t *)(&buf[3]) = y;
+        xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
     }
 }

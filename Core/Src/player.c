@@ -29,7 +29,7 @@ typedef struct {
 
 extern MessageBufferHandle_t gui_message_handle;
 
-uint8_t spk_volumn_val = 16;
+uint8_t spk_volume_val = 16;
 
 static PlayerManager playerMng = {0};
 static volatile uint8_t current_buff = 0;
@@ -148,7 +148,7 @@ void play_song(uint8_t *song_name) {
         es8388_adda_cfg(1, 0);
         es8388_output_cfg(1, 1);
         es8388_headphone_vol_set(25);
-        es8388_speaker_vol_set(spk_volumn_val);
+        es8388_speaker_vol_set(spk_volume_val);
         if (playerMng.audInfo.bps == 16) {
             es8388_i2s_cfg(0, 3);
             i2s_set_format(I2S_DATAFORMAT_16B_EXTENDED);
@@ -208,14 +208,14 @@ void player_task() {
         if ((uxBits & EVENT_KEY1) || (uxBits & EVENT_KEY3)) {
             // key 1 down, key 3 up
             if ((uxBits & EVENT_KEY1)) {
-                spk_volumn_val = spk_volumn_val - 1;
+                spk_volume_val = spk_volume_val - 1;
             }
             else {
-                spk_volumn_val = spk_volumn_val + 1;
+                spk_volume_val = spk_volume_val + 1;
             }
-            spk_volumn_val = es8388_speaker_vol_set(spk_volumn_val);
-            buf[0] = SPK_VOLUMN;
-            buf[1] = spk_volumn_val;
+            spk_volume_val = es8388_speaker_vol_set(spk_volume_val);
+            buf[0] = SPK_VOLUME;
+            buf[1] = spk_volume_val;
             xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
         }
 

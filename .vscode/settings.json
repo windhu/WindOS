@@ -10,6 +10,8 @@
         "iic_at24c02.h": "c",
         "random": "c",
         "iic.h": "c",
-        "dma.h": "c"
+        "dma.h": "c",
+        "gpio.h": "c",
+        "stm32f4xx_hal.h": "c"
     }
 }

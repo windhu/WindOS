@@ -5,6 +5,7 @@
 #include "fun_test.h"
 #include "stdio.h"
 #include "cmsis_os.h"
+#include "touch.h"
 
 void on_key0(KeyState state);
 void on_key1(KeyState state);
@@ -46,6 +47,8 @@ void on_key3(KeyState state) {
 void key_scan()
 {
   uint8_t key_num = sizeof(keys) / sizeof(Key);
+  uint16_t x = 0, y = 0;
+  tp_init();
 
   for (;;)
   {
@@ -104,6 +107,13 @@ void key_scan()
         break;
       }
     }
-    osDelay(8); // 8ms delay
+    // touch panel
+    if (tp_scan(0, &x, &y) > 0) {
+      if (x != 0xFFFF && y != 0xFFFF) {
+        // printf("touch x=%d, y=%d\r\n", x, y);
+        test_touch_tp_pressed(x, y);
+      }
+    }
+    osDelay(4);
   }
 }

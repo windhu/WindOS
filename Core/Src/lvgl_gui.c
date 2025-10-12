@@ -15,7 +15,9 @@
 #define MESSAGE_BUFFER_SIZE 100
 #define MESSAGE_ITEM_SIZE   32
 
-extern uint8_t spk_volumn_val; // TODO: global variable is not a good idea
+#define TOUCH_POINT_RADIUS  6
+
+extern uint8_t spk_volume_val; // TODO: global variable is not a good idea
 
 MessageBufferHandle_t gui_message_handle;
 
@@ -23,18 +25,26 @@ static char messageItem[32];
 static lv_obj_t *welcom_label = NULL;
 static lv_obj_t *start_btn_label = NULL;
 static lv_obj_t *start_btn = NULL;
-static lv_obj_t *mode_label = NULL;
-static lv_obj_t *write_label = NULL;
-static lv_obj_t *read_label = NULL;
-static lv_obj_t *write_data_label = NULL;
-static lv_obj_t *read_data_label = NULL;
-static lv_obj_t *sd_label = NULL;
-static lv_obj_t *sd_data_label = NULL;
+static lv_obj_t *row_1 = NULL;
+static lv_obj_t *row_2 = NULL;
+static lv_obj_t *row_3 = NULL;
+static lv_obj_t *row_2_data = NULL;
+static lv_obj_t *row_3_data = NULL;
+static lv_obj_t *row_4 = NULL;
+static lv_obj_t *row_4_data = NULL;
 static lv_obj_t *arc_widge;
+static lv_obj_t *cir_tp_topleft = NULL;
+static lv_obj_t *cir_tp_topright = NULL;
+static lv_obj_t *cir_tp_center = NULL;
+static lv_obj_t *cir_tp_bottomleft = NULL;
+static lv_obj_t *cir_tp_bottomright = NULL;
+
 static void draw_logo();
 static void draw_welcome_screen();
 static void draw_enter_mode();
 static void lv_example_arc_2(void);
+static lv_obj_t* draw_touch_point(int32_t x, int32_t y);
+static void hide_touch_points();
 
 void lvgl_gui_init() {
     lv_port_init();
@@ -50,65 +60,74 @@ void lvgl_gui_main() {
     if (xReceivedBytes <= 0) {
         return;
     }
-    printf("receive bytes: %d\r\n", xReceivedBytes);
+    // printf("receive bytes: %d\r\n", xReceivedBytes);
     // first is the command
     if (messageItem[0] == ENTER_IIC_MODE) {
-        if (mode_label == NULL) {
+        if (row_1 == NULL) {
             draw_enter_mode();
         }
         else {
-            lv_label_set_text(write_label, "Write data:");
-            lv_label_set_text(read_label, "Read data:");
+            lv_label_set_text(row_2, "Write data:");
+            lv_label_set_text(row_3, "Read data:");
             lv_obj_clear_flag(arc_widge, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(row_4, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(row_4_data, LV_OBJ_FLAG_HIDDEN);
         }
-        lv_label_set_text(mode_label, "IIC Mode");
-        lv_label_set_text(write_data_label, "");
-        lv_label_set_text(read_data_label, "");
+        lv_label_set_text(row_1, "IIC Mode");
+        lv_label_set_text(row_2_data, "");
+        lv_label_set_text(row_3_data, "");
     }
     else if (messageItem[0] == ENTER_SPI_MODE) {
-        lv_label_set_text(mode_label, "SPI Mode");
-        lv_label_set_text(write_data_label, "");
-        lv_label_set_text(read_data_label, "");
+        lv_label_set_text(row_1, "SPI Mode");
+        lv_label_set_text(row_2_data, "");
+        lv_label_set_text(row_3_data, "");
     }
     else if (messageItem[0] == ENTER_CAN_MODE) {
-        lv_label_set_text(mode_label, "CAN Mode");
-        lv_label_set_text(write_data_label, "");
-        lv_label_set_text(read_data_label, "");
+        lv_label_set_text(row_1, "CAN Mode");
+        lv_label_set_text(row_2_data, "");
+        lv_label_set_text(row_3_data, "");
     }
     else if (messageItem[0] == ENTER_SD_MODE) {
-        lv_label_set_text(mode_label, "SD Card Mode");
-        lv_label_set_text(write_label, "Card Type:");
-        lv_label_set_text(read_label, "Capacity:");
-        lv_label_set_text(write_data_label, "");
-        lv_label_set_text(read_data_label, "");
-        lv_label_set_text(sd_label, "First 27 byte:");
-        lv_label_set_text(sd_data_label, "");
+        lv_label_set_text(row_1, "SD Card Mode");
+        lv_label_set_text(row_2, "Card Type:");
+        lv_label_set_text(row_3, "Capacity:");
+        lv_label_set_text(row_2_data, "");
+        lv_label_set_text(row_3_data, "");
+        lv_label_set_text(row_4, "First 27 byte:");
+        lv_label_set_text(row_4_data, "");
         lv_obj_add_flag(arc_widge, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(row_4, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(row_4_data, LV_OBJ_FLAG_HIDDEN);
     }
     else if (messageItem[0] == ENTER_FATFS_MODE) {
-        lv_label_set_text(mode_label, "FATFS Mode");
-        lv_label_set_text(write_label, "Dir:");
-        lv_label_set_text(read_label, "File:");
-        lv_label_set_text(write_data_label, "test");
-        lv_label_set_text(read_data_label, "test.txt");
-        lv_label_set_text(sd_label, "File Content:");
-        lv_label_set_text(sd_data_label, "");
+        lv_label_set_text(row_1, "FATFS Mode");
+        lv_label_set_text(row_2, "Dir:");
+        lv_label_set_text(row_3, "File:");
+        lv_label_set_text(row_2_data, "test");
+        lv_label_set_text(row_3_data, "test.txt");
+        lv_label_set_text(row_4, "File Content:");
+        lv_label_set_text(row_4_data, "");
     }
     else if (messageItem[0] == ENTER_AUD_PLAYER) {
-        lv_label_set_text(mode_label, "Player Mode");
-        lv_label_set_text(read_data_label, "your_16.wav");
-        lv_label_set_text(sd_label, "Audio Volumn:");
-        sprintf(str, "%d", spk_volumn_val);
-        lv_label_set_text(sd_data_label, str);
+        lv_label_set_text(row_1, "Player Mode");
+        lv_label_set_text(row_3_data, "your_16.wav");
+        lv_label_set_text(row_4, "Audio Volume:");
+        sprintf(str, "%d", spk_volume_val);
+        lv_label_set_text(row_4_data, str);
+    }
+    else if (messageItem[0] == ENTER_TOUCH_MODE) {
+        lv_label_set_text(row_1, "Touch Panel Adjust Mode");
+        lv_label_set_text(row_2, "Touch Adjust:");
+        lv_label_set_text(row_2_data, "Done");
+        lv_label_set_text(row_3, "x, y:");
+        lv_label_set_text(row_3_data, "");
+        lv_label_set_text(row_4, "");
+        lv_label_set_text(row_4_data, "");
     }
     else if (messageItem[0] == ENTER_LVGL_MODE) {
-        lv_label_set_text(mode_label, "LVGL Mode");
-        lv_label_set_text(write_data_label, "");
-        lv_label_set_text(read_data_label, "");
+        lv_label_set_text(row_1, "LVGL Mode");
+        lv_label_set_text(row_2_data, "");
+        lv_label_set_text(row_3_data, "");
         // draw LVGL GUI
         draw_welcome_screen();
     }
@@ -116,40 +135,77 @@ void lvgl_gui_main() {
         for (int i = 1; i < xReceivedBytes; i++) {
             sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
         }
-        lv_label_set_text(write_data_label, str);
+        lv_label_set_text(row_2_data, str);
     }
     else if (messageItem[0] == UPDATE_READ) {
         for (int i = 1; i < xReceivedBytes; i++) {
             sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
         }
-        lv_label_set_text(read_data_label, str);
+        lv_label_set_text(row_3_data, str);
     }
     else if (messageItem[0] == SD_INFO) {
         if (messageItem[1] == 1) {
-            lv_label_set_text(write_data_label, &messageItem[2]);
+            lv_label_set_text(row_2_data, &messageItem[2]);
         }
         else if (messageItem[1] == 2) {
-            lv_label_set_text(read_data_label, &messageItem[2]);
+            lv_label_set_text(row_3_data, &messageItem[2]);
         }
     }
     else if (messageItem[0] == SD_DATA) {
         for (int i = 1; i < xReceivedBytes; i++) {
             sprintf(&str[(i-1)*3], "%02X ", (uint8_t)messageItem[i]);
         }
-        lv_label_set_text(sd_data_label, str);
+        lv_label_set_text(row_4_data, str);
     }
     else if (messageItem[0] == FILE_CONTENT) {
-        lv_label_set_text(sd_data_label, &messageItem[1]);
+        printf(&messageItem[1]);
+        lv_label_set_text(row_4_data, &messageItem[1]);
     }
-    else if (messageItem[0] == SPK_VOLUMN) {
+    else if (messageItem[0] == SPK_VOLUME) {
         sprintf(str, "%d", messageItem[1]);
-        lv_label_set_text(sd_data_label, str);
+        lv_label_set_text(row_4_data, str);
     }
     else if (messageItem[0] == PLAYER_START) {
         lv_label_set_text(start_btn_label, "Playing");
     }
     else if (messageItem[0] == PLAYER_STOP) {
         lv_label_set_text(start_btn_label, "Stop");
+    }
+    else if (messageItem[0] == TP_ADJUST) {
+        if (messageItem[1] == 0) {
+            lv_label_set_text(row_2_data, "top left");
+            lv_label_set_text(row_3_data, "");
+            lv_obj_clear_flag(cir_tp_topleft, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (messageItem[1] == 1) {
+            lv_label_set_text(row_2_data, "top right");
+            lv_obj_clear_flag(cir_tp_topright, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (messageItem[1] == 2) {
+            lv_label_set_text(row_2_data, "bottom left");
+            lv_obj_clear_flag(cir_tp_bottomleft, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (messageItem[1] == 3) {
+            lv_label_set_text(row_2_data, "bottom right");
+            lv_obj_clear_flag(cir_tp_bottomright, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (messageItem[1] == 4) {
+            lv_label_set_text(row_2_data, "center");
+            lv_obj_clear_flag(cir_tp_center, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (messageItem[1] == 5) {
+            hide_touch_points();
+            if (messageItem[2] == 1) {
+                lv_label_set_text(row_2_data, "Done");
+            }
+            else {
+                lv_label_set_text(row_2_data, "Retry");
+            }
+        }
+    }
+    else if (messageItem[0] == TP_PRESSED) {
+        sprintf(str, "%d, %d", *((uint16_t*)(&messageItem[1])), *((uint16_t*)(&messageItem[3])));
+        lv_label_set_text(row_3_data, str);
     }
 }
 
@@ -197,54 +253,80 @@ static void draw_enter_mode()
         lv_obj_delete(welcom_label);
         welcom_label = NULL;
     }
-    mode_label = lv_label_create(lv_scr_act());
-    lv_obj_align(mode_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN);
-    lv_obj_set_height(mode_label, LABEL_HEIGHT);
-    lv_obj_set_width(mode_label, LABEL_WIDTH);
+    row_1 = lv_label_create(lv_scr_act());
+    lv_obj_align(row_1, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN);
+    lv_obj_set_height(row_1, LABEL_HEIGHT);
+    lv_obj_set_width(row_1, LABEL_WIDTH*2);
 
-    write_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(write_label, "Write data:");
-    lv_obj_align(write_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT);
-    lv_obj_set_height(write_label, LABEL_HEIGHT);
-    lv_obj_set_width(write_label, LABEL_WIDTH);
+    row_2 = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_2, "Write data:");
+    lv_obj_align(row_2, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT);
+    lv_obj_set_height(row_2, LABEL_HEIGHT);
+    lv_obj_set_width(row_2, LABEL_WIDTH);
 
-    write_data_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(write_data_label, "");
-    lv_obj_align(write_data_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT);
-    lv_obj_set_height(write_data_label, LABEL_HEIGHT);
-    lv_obj_set_width(write_data_label, LABEL_WIDTH);
+    row_2_data = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_2_data, "");
+    lv_obj_align(row_2_data, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT);
+    lv_obj_set_height(row_2_data, LABEL_HEIGHT);
+    lv_obj_set_width(row_2_data, LABEL_WIDTH);
 
-    read_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(read_label, "Read data:");
-    lv_obj_align(read_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 2);
-    lv_obj_set_height(read_label, LABEL_HEIGHT);
-    lv_obj_set_width(read_label, LABEL_WIDTH);
+    row_3 = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_3, "Read data:");
+    lv_obj_align(row_3, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 2);
+    lv_obj_set_height(row_3, LABEL_HEIGHT);
+    lv_obj_set_width(row_3, LABEL_WIDTH);
 
-    read_data_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(read_data_label, "");
-    lv_obj_align(read_data_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 2);
-    lv_obj_set_height(read_data_label, LABEL_HEIGHT);
-    lv_obj_set_width(read_data_label, LABEL_WIDTH);
+    row_3_data = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_3_data, "");
+    lv_obj_align(row_3_data, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 2);
+    lv_obj_set_height(row_3_data, LABEL_HEIGHT);
+    lv_obj_set_width(row_3_data, LABEL_WIDTH);
 
-    sd_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(sd_label, "");
-    lv_obj_align(sd_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
-    lv_obj_set_height(sd_label, LABEL_HEIGHT);
-    lv_obj_set_width(sd_label, LABEL_WIDTH);
-    lv_obj_add_flag(sd_label, LV_OBJ_FLAG_HIDDEN);
+    row_4 = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_4, "");
+    lv_obj_align(row_4, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
+    lv_obj_set_height(row_4, LABEL_HEIGHT);
+    lv_obj_set_width(row_4, LABEL_WIDTH);
+    lv_obj_add_flag(row_4, LV_OBJ_FLAG_HIDDEN);
 
-    sd_data_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(sd_data_label, "");
-    lv_obj_align(sd_data_label, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
-    lv_obj_set_height(sd_data_label, LABEL_HEIGHT*3);
-    lv_obj_set_width(sd_data_label, LABEL_WIDTH);
-    lv_obj_add_flag(sd_data_label, LV_OBJ_FLAG_HIDDEN);
+    row_4_data = lv_label_create(lv_scr_act());
+    lv_label_set_text(row_4_data, "");
+    lv_obj_align(row_4_data, LV_ALIGN_TOP_LEFT, MODE_LEFT_MARGIN + LABEL_WIDTH, LOGO_HEIGHT + MODE_TOP_MARGIN + LABEL_HEIGHT * 3);
+    lv_obj_set_height(row_4_data, LABEL_HEIGHT*3);
+    lv_obj_set_width(row_4_data, LABEL_WIDTH);
+    lv_obj_add_flag(row_4_data, LV_OBJ_FLAG_HIDDEN);
 
     lv_label_set_text(start_btn_label, "Stop");
+
+    cir_tp_topleft = draw_touch_point(20, 20);
+    cir_tp_topright = draw_touch_point(lcd_get_width() - 20, 20);
+    cir_tp_center = draw_touch_point(lcd_get_width()/2, lcd_get_heigth()/2);
+    cir_tp_bottomleft = draw_touch_point(20, lcd_get_heigth() - 20);
+    cir_tp_bottomright = draw_touch_point(lcd_get_width() - 20, lcd_get_heigth() - 20);
+    hide_touch_points();
 }
 
-static void set_angle(void * obj, int32_t v)
-{
+static void hide_touch_points() {
+    lv_obj_add_flag(cir_tp_topleft, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cir_tp_topright, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cir_tp_center, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cir_tp_bottomleft, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cir_tp_bottomright, LV_OBJ_FLAG_HIDDEN);
+}
+
+static lv_obj_t* draw_touch_point(int32_t x, int32_t y) {
+    lv_obj_t* circle = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(circle, TOUCH_POINT_RADIUS*2, TOUCH_POINT_RADIUS*2);
+    lv_obj_align(circle, LV_ALIGN_TOP_LEFT, x - TOUCH_POINT_RADIUS, y - TOUCH_POINT_RADIUS);
+    lv_obj_set_style_radius(circle, TOUCH_POINT_RADIUS, 0);
+    lv_obj_set_style_bg_color(circle, lv_color_hex(0x3498db), 0);
+    lv_obj_set_style_bg_opa(circle, LV_OPA_50, 0);
+    lv_obj_set_style_border_width(circle, 2, 0);
+    lv_obj_set_style_border_color(circle, lv_color_hex(0x2980b9), 0);
+    return circle;
+}
+
+static void set_angle(void * obj, int32_t v) {
     lv_arc_set_value((lv_obj_t *)obj, v);
 }
 
