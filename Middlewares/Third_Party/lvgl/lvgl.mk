@@ -9,7 +9,7 @@ CSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*.c')
 # CXXSRCS += $(shell find $(LVGL_PATH)/src -type f -name '*${CXXEXT}')
 
 CSRCS += $(LVGL_PATH)/lvgl_port.c
-
+CSRCS += $(LVGL_PATH)/lv_port_indev.c
 AFLAGS += "-I$(LVGL_PATH)"
 CFLAGS += "-I$(LVGL_PATH)"
 CXXFLAGS += "-I$(LVGL_PATH)"

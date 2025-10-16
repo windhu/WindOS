@@ -23,6 +23,11 @@ enum LVGLCommand {
     TP_PRESSED,
 };
 
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+} TP_Point;
+
 void lvgl_gui_init();
 void lvgl_gui_main();
 #endif // LVGL_GUI_H

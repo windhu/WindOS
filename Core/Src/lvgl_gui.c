@@ -4,6 +4,9 @@
 #include "lvgl.h"
 #include "FreeRTOS.h"
 #include "message_buffer.h"
+#include "queue.h"
+#include "lv_port_indev.h"
+#include "key.h"
 #include <stdio.h>
 
 #define LOGO_HEIGHT  80
@@ -20,6 +23,7 @@
 extern uint8_t spk_volume_val; // TODO: global variable is not a good idea
 
 MessageBufferHandle_t gui_message_handle;
+QueueHandle_t gui_tp_queue_handle;
 
 static char messageItem[32];
 static lv_obj_t *welcom_label = NULL;
@@ -51,6 +55,8 @@ void lvgl_gui_init() {
     draw_logo();
     draw_welcome_screen();
     gui_message_handle = xMessageBufferCreate(MESSAGE_BUFFER_SIZE);
+    gui_tp_queue_handle = xQueueCreate(10, sizeof(TP_Point));
+    lv_port_indev_init();
 }
 
 void lvgl_gui_main() {
@@ -226,6 +232,19 @@ static void draw_logo() {
     lv_obj_align(label1, LV_ALIGN_CENTER, 0, 0);
 }
 
+extern void test_audio(uint8_t key_code);
+static void event_handler(lv_event_t * e) {
+    lv_event_code_t code = lv_event_get_code(e);
+
+    if(code == LV_EVENT_CLICKED) {
+        // LV_LOG_USER("Clicked");
+        test_audio(KEY_CODE_0);
+    }
+    else if(code == LV_EVENT_VALUE_CHANGED) {
+        LV_LOG_USER("Toggled");
+    }
+}
+
 void draw_welcome_screen() {
     draw_logo();
     welcom_label = lv_label_create(lv_scr_act());
@@ -236,10 +255,10 @@ void draw_welcome_screen() {
     lv_example_arc_2();
 
     start_btn = lv_button_create(lv_screen_active());
-    // lv_obj_add_event_cb(start_btn, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(start_btn, event_handler, LV_EVENT_ALL, NULL);
     lv_obj_align(start_btn, LV_ALIGN_CENTER, 0, 160);
     lv_obj_set_width(start_btn, 100);
-    lv_obj_remove_flag(start_btn, LV_OBJ_FLAG_PRESS_LOCK);
+    // lv_obj_remove_flag(start_btn, LV_OBJ_FLAG_PRESS_LOCK);
 
     start_btn_label = lv_label_create(start_btn);
     lv_label_set_text(start_btn_label, "Start");

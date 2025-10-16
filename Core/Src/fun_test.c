@@ -10,10 +10,11 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 #include "message_buffer.h"
+#include "queue.h"
 #include "sdio.h"
-#include "string.h"
 #include "ff.h"
 #include "touch.h"
+#include <string.h>
 
 extern MessageBufferHandle_t gui_message_handle;
 extern uint32_t get_random_number(void);
@@ -312,11 +313,19 @@ void test_touch(uint8_t key_code) {
 
 void test_touch_tp_pressed(uint16_t x, uint16_t y) {
     uint8_t buf[5] = {0};
-    // Touch Adjust mode
+    TP_Point tpp;
+    extern QueueHandle_t gui_tp_queue_handle;
     if (curr_test_mode == 6) {
+        // Touch Adjust mode
         buf[0] = TP_PRESSED;
         *(uint16_t *)(&buf[1]) = x;
         *(uint16_t *)(&buf[3]) = y;
         xMessageBufferSend(gui_message_handle,(void *) buf, sizeof(buf), 0);
+    }
+    else if (curr_test_mode == 5){
+        // Audio mode send it to LVGL
+        tpp.x = x;
+        tpp.y = y;
+        xQueueSend(gui_tp_queue_handle, (void *)(&tpp), 0);
     }
 }
