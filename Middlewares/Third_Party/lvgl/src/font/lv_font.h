@@ -351,6 +351,10 @@ LV_FONT_DECLARE(lv_font_unscii_16)
 LV_FONT_CUSTOM_DECLARE
 #endif
 
+#ifdef LV_FONT_SONGTI_24
+LV_FONT_DECLARE(lv_font_songti_24)
+#endif
+
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif

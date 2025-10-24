@@ -245,11 +245,15 @@ static void event_handler(lv_event_t * e) {
     }
 }
 
+LV_FONT_DECLARE(lv_font_songti_24)
+
 void draw_welcome_screen() {
     draw_logo();
     welcom_label = lv_label_create(lv_scr_act());
     lv_label_set_long_mode(welcom_label, LV_LABEL_LONG_MODE_WRAP);
-    lv_label_set_text(welcom_label, "FENG QING YUN DAN's Demo!");
+    // lv_label_set_text(welcom_label, "FENG QING YUN DAN's Demo!");
+    lv_obj_set_style_text_font(welcom_label, &lv_font_songti_24, 0);
+    lv_label_set_text(welcom_label, "欢迎到 峰轻云淡 公众号");
     lv_obj_align(welcom_label, LV_ALIGN_TOP_MID, 0, LOGO_HEIGHT + 40);
 
     lv_example_arc_2();
