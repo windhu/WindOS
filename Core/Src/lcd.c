@@ -4,7 +4,7 @@
 #include "main.h"
 #include "stdio.h"
 
-#include "charcode.c"
+#include "charcode.h"
 
 #define LCD_BASE_ADDRESS     0x60000000
 #define FSMC_NE4_BASE_ADDRESS 0x6C000000

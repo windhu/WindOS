@@ -13,5 +13,7 @@
         "dma.h": "c",
         "gpio.h": "c",
         "stm32f4xx_hal.h": "c"
-    }
+    },
+    "cortex-debug.armToolchainPath": "/Applications/ArmGNUToolchain/14.2.rel1/arm-none-eabi/bin",
+    "cortex-debug.openocdPath": "/usr/local/bin/openocd"
 }
