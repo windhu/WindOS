@@ -14,6 +14,7 @@
 #include "sdio.h"
 #include "ff.h"
 #include "touch.h"
+#include "sram.h"
 #include <string.h>
 
 extern MessageBufferHandle_t gui_message_handle;
@@ -26,6 +27,7 @@ void test_sd(uint8_t key_code);
 void test_fatfs(uint8_t key_code);
 void test_audio(uint8_t key_code);
 void test_touch(uint8_t key_code);
+void test_sram(void);
 
 static void get_4bytes_random(uint8_t *buf);
 // buffer shared by all test for saving memory
@@ -74,6 +76,7 @@ void test_mode_init() {
         printf("failed to create key event group\r\n");
     }
     norflash_init();
+    test_sram();
 }
 
 void test_mode_change() {
@@ -327,5 +330,37 @@ void test_touch_tp_pressed(uint16_t x, uint16_t y) {
         tpp.x = x;
         tpp.y = y;
         xQueueSend(gui_tp_queue_handle, (void *)(&tpp), 0);
+    }
+}
+
+void test_sram(void) {
+    uint8_t write_buf[16];
+    uint8_t read_buf[16];
+    printf("SRAM test start...\r\n");
+    // write random data
+    for (int i = 0; i < sizeof(write_buf); i++) {
+        write_buf[i] = rand() % 256;
+    }
+    sram_write(write_buf, 0, sizeof(write_buf));
+    printf("SRAM write data:");
+    for (int i = 0; i < sizeof(write_buf); i++) {
+        printf(" %02X", write_buf[i]);
+    }
+    printf("\r\n");
+
+    // read back
+    sram_read(read_buf, 0, sizeof(read_buf));
+    printf("SRAM read data :");
+    for (int i = 0; i < sizeof(read_buf); i++) {
+        printf(" %02X", read_buf[i]);
+    }
+    printf("\r\n");
+
+    // compare
+    if (memcmp(write_buf, read_buf, sizeof(write_buf)) == 0) {
+        printf("SRAM test passed!\r\n");
+    }
+    else {
+        printf("SRAM test failed!\r\n");
     }
 }
