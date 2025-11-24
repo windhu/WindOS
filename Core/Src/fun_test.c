@@ -333,10 +333,18 @@ void test_touch_tp_pressed(uint16_t x, uint16_t y) {
     }
 }
 
+// 1 MB buffer in SRAM
+uint32_t g_test_sram_buffer[250000] __attribute__((section(".bss.ARM.__at_0x68000000")));
 void test_sram(void) {
+    uint8_t temp = 0;
     uint8_t write_buf[16];
     uint8_t read_buf[16];
     printf("SRAM test start...\r\n");
+    for (int i = 0; i < 1024 * 1024; i += 4096)
+    {
+        sram_write(&temp, i, 1);
+        temp++;
+    }
     // write random data
     for (int i = 0; i < sizeof(write_buf); i++) {
         write_buf[i] = rand() % 256;
