@@ -333,32 +333,35 @@ void test_touch_tp_pressed(uint16_t x, uint16_t y) {
     }
 }
 
-// 1 MB buffer in SRAM
-uint32_t g_test_sram_buffer[250000] __attribute__((section(".bss.ARM.__at_0x68000000")));
+uint32_t __attribute__((section(".sram"))) g_test_sram_buffer[250000];
 void test_sram(void) {
-    uint8_t temp = 0;
     uint8_t write_buf[16];
+    uint8_t write_buf_above[16];
     uint8_t read_buf[16];
+    g_test_sram_buffer[0] = 0x12345678; // prevent optimization
+    printf("SRAM base address value verify: 0x%08X\r\n", (unsigned int)g_test_sram_buffer[0]);
     printf("SRAM test start...\r\n");
-    for (int i = 0; i < 1024 * 1024; i += 4096)
-    {
-        sram_write(&temp, i, 1);
-        temp++;
-    }
-    // write random data
+    // write random data below 512KB
     for (int i = 0; i < sizeof(write_buf); i++) {
         write_buf[i] = rand() % 256;
+        write_buf_above[i] = rand() % 256;
     }
+    printf("SRAM write data below 512KB:");
     sram_write(write_buf, 0, sizeof(write_buf));
-    printf("SRAM write data:");
     for (int i = 0; i < sizeof(write_buf); i++) {
         printf(" %02X", write_buf[i]);
+    }
+    printf("\r\n");
+    printf("SRAM write data above 512KB:");
+    sram_write(write_buf_above, 512*1024, sizeof(write_buf_above));
+    for (int i = 0; i < sizeof(write_buf_above); i++) {
+        printf(" %02X", write_buf_above[i]);
     }
     printf("\r\n");
 
     // read back
     sram_read(read_buf, 0, sizeof(read_buf));
-    printf("SRAM read data :");
+    printf("SRAM read data below 512KB:");
     for (int i = 0; i < sizeof(read_buf); i++) {
         printf(" %02X", read_buf[i]);
     }
@@ -366,9 +369,25 @@ void test_sram(void) {
 
     // compare
     if (memcmp(write_buf, read_buf, sizeof(write_buf)) == 0) {
-        printf("SRAM test passed!\r\n");
+        printf("SRAM test passed for below 512KB!\r\n");
     }
     else {
-        printf("SRAM test failed!\r\n");
+        printf("SRAM test failed for below 512KB!\r\n");
+    }
+
+    // read back above 512KB
+    sram_read(read_buf, 512*1024, sizeof(write_buf_above));
+    printf("SRAM read data above 512KB:");
+    for (int i = 0; i < sizeof(read_buf); i++) {
+        printf(" %02X", read_buf[i]);
+    }
+    printf("\r\n");
+
+    // compare
+    if (memcmp(write_buf_above, read_buf, sizeof(write_buf_above)) == 0) {
+        printf("SRAM test passed for above 512KB!\r\n");
+    }
+    else {
+        printf("SRAM test failed for above 512KB!\r\n");
     }
 }
