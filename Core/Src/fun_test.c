@@ -19,6 +19,7 @@
 
 extern MessageBufferHandle_t gui_message_handle;
 extern uint32_t get_random_number(void);
+extern TIM_HandleTypeDef htim14;
 
 void test_iic(uint8_t key_code);
 void test_spi1(uint8_t key_code);
@@ -28,6 +29,7 @@ void test_fatfs(uint8_t key_code);
 void test_audio(uint8_t key_code);
 void test_touch(uint8_t key_code);
 void test_sram(void);
+void test_pwm(uint8_t key_code);
 
 static void get_4bytes_random(uint8_t *buf);
 // buffer shared by all test for saving memory
@@ -47,6 +49,7 @@ TestMode modes[] = {
     {ENTER_FATFS_MODE, test_fatfs}, // 4
     {ENTER_AUD_PLAYER, test_audio}, // 5
     {ENTER_TOUCH_MODE, test_touch}, // 6
+    {ENTER_PWM_MODE, test_pwm},     // 7
 };
 
 static int8_t curr_test_mode = -1;
@@ -389,5 +392,68 @@ void test_sram(void) {
     }
     else {
         printf("SRAM test failed for above 512KB!\r\n");
+    }
+}
+
+typedef struct {
+    uint32_t freq_hz;
+    uint32_t prescaler;
+    uint32_t period;  // ARR
+    const char* description;
+} freq_config_t;
+    
+static freq_config_t freq_configs[] = {
+    {1000, 168-1,   1000-1,  "1kHz"},
+    {500,  336-1,   1000-1,  "500Hz"},
+    {50,   3360-1,  1000-1,  "50Hz"},
+    
+    {20,   8400-1,  1000-1,  "20Hz"},   // PSC=8399 < 65535 ✓
+    {5,    33600-1, 1000-1,  "5Hz"},    // PSC=33599 < 65535 ✓
+    
+    {2,    8400-1,   5000-1,  "2Hz"},    // PSC=8399, ARR=4999
+    {1,    8400-1,   10000-1, "1Hz"}     // PSC=8399, ARR=9999
+};
+
+void test_pwm(uint8_t key_code) {
+    static uint8_t curr_freq_index = 0;
+    
+    if (key_code == KEY_CODE_0) {
+        if (curr_freq_index >= sizeof(freq_configs)/sizeof(freq_configs[0])) {
+            curr_freq_index = 0;
+        }
+        if(freq_configs[curr_freq_index].prescaler > 65535 || freq_configs[curr_freq_index].period > 65535)
+        {
+            printf("Skip: %s (parameter)\r\n", freq_configs[curr_freq_index].description);
+            curr_freq_index++;
+            return;
+        }
+        HAL_TIM_PWM_Stop(&htim14, TIM_CHANNEL_1);
+
+        __HAL_TIM_SET_COUNTER(&htim14, 0);
+        __HAL_TIM_SET_PRESCALER(&htim14, freq_configs[curr_freq_index].prescaler);
+        __HAL_TIM_SET_AUTORELOAD(&htim14, freq_configs[curr_freq_index].period);
+        uint32_t half_duty = freq_configs[curr_freq_index].period / 2;
+        __HAL_TIM_SET_COMPARE(&htim14, TIM_CHANNEL_1, half_duty);
+
+        HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
+        // Update GUI
+        test_tmp_buf[0] = UPDATE_PWM;
+        strcpy((char*)&test_tmp_buf[1], freq_configs[curr_freq_index].description);
+        size_t sbyte = xMessageBufferSend(gui_message_handle,(void *) test_tmp_buf, strlen((char*)&test_tmp_buf[1]) + 1 + 1, 0);
+        if (sbyte != (strlen((char*)&test_tmp_buf[1]) + 1 + 1)) {
+            printf("Send message buffer for PWM update failed, sbyte:%d\r\n", sbyte);
+        }
+        // Next frequency
+        curr_freq_index++;
+    }
+    else if (key_code == KEY_CODE_1) {
+        HAL_TIM_PWM_Stop(&htim14, TIM_CHANNEL_1);
+        // Update GUI
+        test_tmp_buf[0] = UPDATE_PWM;
+        strcpy((char*)&test_tmp_buf[1], "Stop");
+        size_t sbyte = xMessageBufferSend(gui_message_handle,(void *) test_tmp_buf, strlen((char*)&test_tmp_buf[1]) + 1 + 1, 0);
+        if (sbyte != (strlen((char*)&test_tmp_buf[1]) + 1 + 1)) {
+            printf("Send message buffer for PWM update failed, sbyte:%d\r\n", sbyte);
+        }
     }
 }

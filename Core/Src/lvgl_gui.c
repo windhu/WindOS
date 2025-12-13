@@ -130,6 +130,15 @@ void lvgl_gui_main() {
         lv_label_set_text(row_4, "");
         lv_label_set_text(row_4_data, "");
     }
+    else if (messageItem[0] == ENTER_PWM_MODE) {
+        lv_label_set_text(row_1, "PWM Mode");
+        lv_label_set_text(row_2, "PWM Output:");
+        lv_label_set_text(row_2_data, "Stop");
+        lv_label_set_text(row_3, "");
+        lv_label_set_text(row_3_data, "");
+        lv_label_set_text(row_4, "");
+        lv_label_set_text(row_4_data, "");
+    }
     else if (messageItem[0] == ENTER_LVGL_MODE) {
         lv_label_set_text(row_1, "LVGL Mode");
         lv_label_set_text(row_2_data, "");
@@ -212,6 +221,9 @@ void lvgl_gui_main() {
     else if (messageItem[0] == TP_PRESSED) {
         sprintf(str, "%d, %d", *((uint16_t*)(&messageItem[1])), *((uint16_t*)(&messageItem[3])));
         lv_label_set_text(row_3_data, str);
+    }
+    else if (messageItem[0] == UPDATE_PWM) {
+        lv_label_set_text(row_2_data, &messageItem[1]);
     }
 }
 

@@ -9,6 +9,7 @@ enum LVGLCommand {
     ENTER_FATFS_MODE,
     ENTER_AUD_PLAYER,
     ENTER_TOUCH_MODE,
+    ENTER_PWM_MODE,
     ENTER_LVGL_MODE,
 
     UPDATE_WRITE = 20,
@@ -21,6 +22,7 @@ enum LVGLCommand {
     PLAYER_STOP,
     TP_ADJUST,
     TP_PRESSED,
+    UPDATE_PWM,
 };
 
 typedef struct {

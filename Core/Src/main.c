@@ -114,6 +114,7 @@ int main(void)
   MX_RNG_Init();
   MX_SDIO_SD_Init();
   MX_I2S2_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
   lvgl_gui_init();
   test_mode_init();
