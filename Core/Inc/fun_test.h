@@ -8,7 +8,10 @@
 #define EVENT_KEY3  (1<<3)
 
 void test_mode_init();
-void test_mode_change();
+void test_mode_change(void); /* compatibility wrapper: cycle to next mode */
+void test_mode_next(void);  /* advance to next mode */
+void test_mode_set(int8_t new_mode); /* set a specific mode safely */
+int8_t test_get_current_mode(void);
 void test_key_handler(uint8_t key_code);
 
 void show_logo_on_lcd();

@@ -97,7 +97,7 @@ typedef void (*mode_handler) (int8_t mode_signal);
 typedef void (*mode_key_handler) (uint8_t key_code);
 typedef struct {
     int8_t enter_signal;
-    int8_t sexit_signal;
+    int8_t exit_signal;
     mode_handler mode_enter;
     mode_handler mode_exit;
     mode_key_handler handler;
@@ -142,16 +142,42 @@ void test_mode_init() {
     test_sram();
 }
 
-void test_mode_change() {
-    if (curr_test_mode >= 0) {
-        // exit current mode
-        modes[curr_test_mode].mode_exit(modes[curr_test_mode].enter_signal);
+#define MODE_COUNT (sizeof(modes)/sizeof(modes[0]))
+
+void test_mode_set(int8_t new_mode) {
+    if (new_mode < 0 || new_mode >= MODE_COUNT) return;
+    taskENTER_CRITICAL();
+    int8_t prev = curr_test_mode;
+    if (prev == new_mode) {
+        taskEXIT_CRITICAL();
+        return;
     }
-    if (++curr_test_mode >= sizeof(modes)/sizeof(TestMode)) {
-        curr_test_mode = 0;
+    if (prev >= 0 && modes[prev].mode_exit) {
+        int8_t sig = (modes[prev].exit_signal >= 0) ? modes[prev].exit_signal : modes[prev].enter_signal;
+        modes[prev].mode_exit(sig);
     }
-    // enter new mode
-    modes[curr_test_mode].mode_enter(modes[curr_test_mode].enter_signal);
+    curr_test_mode = new_mode;
+    if (modes[curr_test_mode].mode_enter) {
+        modes[curr_test_mode].mode_enter(modes[curr_test_mode].enter_signal);
+    }
+    taskEXIT_CRITICAL();
+}
+
+void test_mode_next(void) {
+    int8_t next;
+    taskENTER_CRITICAL();
+    if (curr_test_mode < 0) next = 0;
+    else next = (curr_test_mode + 1) % MODE_COUNT;
+    taskEXIT_CRITICAL();
+    test_mode_set(next);
+}
+
+void test_mode_change(void) {
+    test_mode_next();
+}
+
+int8_t test_get_current_mode(void) {
+    return curr_test_mode;
 }
 
 void test_key_handler(uint8_t key_code) {
