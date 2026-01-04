@@ -34,25 +34,85 @@ void test_pwm(uint8_t key_code);
 static void get_4bytes_random(uint8_t *buf);
 // buffer shared by all test for saving memory
 static uint8_t test_tmp_buf[512];
+static int8_t curr_test_mode = -1;
 
+void SendModeSignal(uint8_t mode_signal) {
+    uint8_t model_signal[1] = { mode_signal };
+    size_t sbyte = xMessageBufferSend(gui_message_handle,(void *) model_signal, sizeof( model_signal ), 0);
+    if (sbyte != sizeof(model_signal)) {
+        printf("Send message buffer failed, sbyte:%d\r\n", sbyte);
+    }
+}
+
+void enter_iic(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_iic(int8_t mode_signal) {
+    printf("Exit IIC Test Mode\r\n");
+}
+void enter_spi1(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_spi1(int8_t mode_signal) {
+    printf("Exit SPI1 Test Mode\r\n");
+}
+void enter_can1(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_can1(int8_t mode_signal) {
+    printf("Exit CAN1 Test Mode\r\n");
+}
+void enter_sd(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_sd(int8_t mode_signal) {
+    printf("Exit SD Test Mode\r\n");
+}
+void enter_fatfs(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_fatfs(int8_t mode_signal) {
+    printf("Exit FATFS Test Mode\r\n");
+}
+void enter_audio(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_audio(int8_t mode_signal) {
+    printf("Exit Audio Test Mode\r\n");
+}
+void enter_touch(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_touch(int8_t mode_signal) {
+    printf("Exit Touch Test Mode\r\n");
+}
+void enter_pwm(int8_t mode_signal) {
+    SendModeSignal(mode_signal);
+}
+void exit_pwm(int8_t mode_signal) {
+    printf("Exit PWM Test Mode\r\n");
+}
+
+typedef void (*mode_handler) (int8_t mode_signal);
 typedef void (*mode_key_handler) (uint8_t key_code);
 typedef struct {
-    uint8_t mode_signal;
+    int8_t enter_signal;
+    int8_t sexit_signal;
+    mode_handler mode_enter;
+    mode_handler mode_exit;
     mode_key_handler handler;
 } TestMode;
 
 TestMode modes[] = {
-    {ENTER_IIC_MODE, test_iic},     // 0
-    {ENTER_SPI_MODE, test_spi1},    // 1
-    {ENTER_CAN_MODE, test_can1},    // 2
-    {ENTER_SD_MODE, test_sd},       // 3
-    {ENTER_FATFS_MODE, test_fatfs}, // 4
-    {ENTER_AUD_PLAYER, test_audio}, // 5
-    {ENTER_TOUCH_MODE, test_touch}, // 6
-    {ENTER_PWM_MODE, test_pwm},     // 7
+    {ENTER_IIC_MODE, -1, enter_iic, exit_iic, test_iic},     // 0
+    {ENTER_SPI_MODE, -1, enter_spi1, exit_spi1, test_spi1},    // 1
+    {ENTER_CAN_MODE, -1, enter_can1, exit_can1, test_can1},    // 2
+    {ENTER_SD_MODE, -1, enter_sd, exit_sd, test_sd},       // 3
+    {ENTER_FATFS_MODE, -1, enter_fatfs, exit_fatfs, test_fatfs}, // 4
+    {ENTER_AUD_PLAYER, -1, enter_audio, exit_audio, test_audio}, // 5
+    {ENTER_TOUCH_MODE, -1, enter_touch, exit_touch, test_touch}, // 6
+    {ENTER_PWM_MODE, -1, enter_pwm, exit_pwm, test_pwm},     // 7
 };
-
-static int8_t curr_test_mode = -1;
 
 static void get_4bytes_random(uint8_t *buf) {
     uint32_t data = get_random_number();
@@ -83,14 +143,15 @@ void test_mode_init() {
 }
 
 void test_mode_change() {
+    if (curr_test_mode >= 0) {
+        // exit current mode
+        modes[curr_test_mode].mode_exit(modes[curr_test_mode].enter_signal);
+    }
     if (++curr_test_mode >= sizeof(modes)/sizeof(TestMode)) {
         curr_test_mode = 0;
     }
-    uint8_t model_signal[1] = { modes[curr_test_mode].mode_signal };
-    size_t sbyte = xMessageBufferSend(gui_message_handle,(void *) model_signal, sizeof( model_signal ), 0);
-    if (sbyte != sizeof(model_signal)) {
-        printf("Send message buffer failed, sbyte:%d\r\n", sbyte);
-    }
+    // enter new mode
+    modes[curr_test_mode].mode_enter(modes[curr_test_mode].enter_signal);
 }
 
 void test_key_handler(uint8_t key_code) {
